@@ -12,4 +12,3 @@ make.sh
 stats
 *.swp
 largegit.sh
-log/*
