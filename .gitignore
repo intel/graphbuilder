@@ -13,3 +13,4 @@ stats
 *.swp
 largegit.sh
 log/*
+*.jar
