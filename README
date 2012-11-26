@@ -1,14 +1,15 @@
-GraphBuilder is a Java library for preparing graphs from large volume of any 
-type of data from unstructured to structured. Data relationships plays a vital role
-in various data analytics and structured machine learning applications, these
-relationships can be expressed as graphs. 
+Data relationships play a vital role in various data analytics, structured machine 
+learning, and data mining applications. These relationships can be expressed as 
+graphs. GraphBuilder is a Java library for preparing graphs from large volumes of 
+unstructured and semi-structured data. 
 
-Processing large graphs requires distributed computing environment that creates 
-multiple challenges for a balanced systems. A Balanced system requires careful 
-preparation of ingress data (graphs) for the computation. GraphBuilder address these 
-challenges by encapsulating construction process in the library written in Java using 
-Apache Hadoop framework to achieve scalability. 
-
+Processing large graphs in a distributed computing environment presents multiple 
+system-level challenges, from parallelizing the graph construction algorithms to 
+achieving balanced system utilization. In addition, the resultant graph must be 
+carefully partitioned to ensure that subsequent application processing is properly 
+balanced. GraphBuilder addresses these challenges with a carefully-designed 
+multi-stage pipeline that leverages the Apache Hadoop framework to achieve 
+scalability. 
 
 How to build the GraphBuilder?
 ------------------------------
