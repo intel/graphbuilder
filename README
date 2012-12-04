@@ -40,3 +40,7 @@ data-specific code. Sample code for those interface can be found in demoapps
 directory. It contains code for generating link-graphs and doc-word 
 graph out of Wikipedia XML dump. Interfaces are documented, please refer
 a Javadoc in the doc directory.
+
+Contact
+-------
+More information visit www.01.org/graphbuilder 
