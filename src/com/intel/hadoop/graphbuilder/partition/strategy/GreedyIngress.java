@@ -64,13 +64,11 @@ public class GreedyIngress<VidType> implements Ingress<VidType> {
       BitSet bitset = vertexPresence.get(vid);
       if (!bitset.get(pid)) {
         bitset.set(pid);
-        procLoad.set(pid, procLoad.get(pid) + 1);
       }
     } else {
       BitSet bitset = new BitSet(numProcs);
       bitset.set(pid);
       vertexPresence.put(vid, bitset);
-      procLoad.set(pid, procLoad.get(pid) + 1);
     }
   }
 
@@ -113,7 +111,9 @@ public class GreedyIngress<VidType> implements Ingress<VidType> {
     }
 
     Random generator = new Random();
-    return bestProcs.get(generator.nextInt(bestProcs.size()));
+    short pid = bestProcs.get(generator.nextInt(bestProcs.size()));
+    procLoad.set(pid, procLoad.get(pid) + 1);
+    return pid;
   }
 
   private int numProcs;
