@@ -167,11 +167,12 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
       Reporter reporter) {
     vrecord = new VertexRecord<VidType, VertexData>(vid);
 
+    BitSet mirrors = new BitSet(numProcs);
+    int inEdges = 0;
+    int outEdges = 0;
+      
     while (iter.hasNext()) {
       ValueType val = iter.next();
-      BitSet mirrors = new BitSet(numProcs);
-      int inEdges = 0;
-      int outEdges = 0;
 
       CombinedVrecordValueType vrecordValue = val.vrecordValue();
       inEdges += vrecordValue.inEdges();
@@ -201,8 +202,8 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
     if (vrecord.numMirrors() == 0) {
       vrecord.setOwner((short) generator.nextInt(numProcs));
     } else {
-      List<Short> mirrors = vrecord.mirrorList();
-      vrecord.setOwner(mirrors.get(generator.nextInt(mirrors.size())));
+      List<Short> mirrorsList = vrecord.mirrorList();
+      vrecord.setOwner(mirrorsList.get(generator.nextInt(mirrorsList.size())));
       vrecord.removeMirror(vrecord.owner());
     }
   }
