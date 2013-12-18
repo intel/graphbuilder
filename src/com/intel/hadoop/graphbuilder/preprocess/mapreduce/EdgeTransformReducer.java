@@ -21,9 +21,13 @@ package com.intel.hadoop.graphbuilder.preprocess.mapreduce;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -31,6 +35,9 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.intel.hadoop.graphbuilder.graph.Edge;
+import com.intel.hadoop.graphbuilder.parser.FieldParser;
+import com.intel.hadoop.graphbuilder.parser.GraphParser;
 import com.intel.hadoop.graphbuilder.preprocess.functional.Functional;
 import com.intel.hadoop.graphbuilder.preprocess.mapreduce.keyvalue.PairListType;
 import com.intel.hadoop.graphbuilder.util.Pair;
@@ -43,7 +50,7 @@ import com.intel.hadoop.graphbuilder.util.Pair;
  * @param <VidType>
  */
 public class EdgeTransformReducer<VidType extends WritableComparable<VidType>>
-    extends MapReduceBase implements Reducer<VidType, PairListType, Text, Text> {
+    extends MapReduceBase implements Reducer<IntWritable, Text, Text, Text> {
   @Override
   public void configure(JobConf job) {
     super.configure(job);
@@ -56,6 +63,12 @@ public class EdgeTransformReducer<VidType extends WritableComparable<VidType>>
           .newInstance();
       this.reduceFunc.configure(job);
       this.applyFunc.configure(job);
+      this.graphparser = (GraphParser) Class.forName(job.get("GraphParser"))
+          .newInstance();
+      this.vidparser = (FieldParser) Class.forName(job.get("VidParser"))
+          .newInstance();
+      this.edataparser = (FieldParser) Class.forName(job.get("EdataParser"))
+          .newInstance();
     } catch (InstantiationException e) {
       e.printStackTrace();
     } catch (IllegalAccessException e) {
@@ -65,42 +78,80 @@ public class EdgeTransformReducer<VidType extends WritableComparable<VidType>>
     } catch (Exception e) {
       e.printStackTrace();
     }
+    textKey = new Text();
+    textValue = new Text();
   }
 
   @Override
-  public void reduce(VidType key, Iterator<PairListType> values,
+  public void reduce(IntWritable key, Iterator<Text> values,
       OutputCollector<Text, Text> out, Reporter reporter) throws IOException {
-    ArrayList<VidType> vids = new ArrayList<VidType>();
-    ArrayList<Writable> data = new ArrayList<Writable>();
+
+    adjlist = new HashMap<VidType, ArrayList<VidType>>();
+    edata = new HashMap<VidType, ArrayList<Writable>>();
 
     while (values.hasNext()) {
-      PairListType list = values.next();
-      Iterator<Pair<VidType, Writable>> iter = list.iterator();
-      while (iter.hasNext()) {
-        Pair<VidType, Writable> pair = iter.next();
-        vids.add(pair.getL());
-        data.add(pair.getR());
-      }
+      String line = values.next().toString();
+      StringTokenizer st = new StringTokenizer(line, "|");
+
+      while (st.hasMoreTokens()) {
+        String subline = st.nextToken();
+        Edge e = graphparser.parseEdge(subline, vidparser, edataparser);
+        
+        if (adjlist.containsKey(e.source())) {
+            adjlist.get(e.source()).add((VidType)e.target());
+            edata.get(e.source()).add(e.EdgeData());
+        } else {
+            ArrayList<VidType> vidlist = new ArrayList<VidType>();
+            vidlist.add((VidType)e.target());
+            ArrayList<Writable> elist = new ArrayList<Writable>();
+            elist.add((Writable)e.EdgeData());
+            adjlist.put((VidType)e.source(), vidlist);
+            edata.put((VidType)e.source(), elist);
+          }
+       }
     }
 
     // Reduce
-    Writable r = reduceFunc.base();
-    for (int i = 1; i < data.size(); i++)
-      r = reduceFunc.reduce(data.get(i), r);
+    Iterator<Entry<VidType, ArrayList<VidType>>> viter = adjlist.entrySet().iterator();
+    Iterator<Entry<VidType, ArrayList<Writable>>> diter = edata.entrySet().iterator();
+    
+    while (viter.hasNext() && diter.hasNext()) {
+      Entry<VidType, ArrayList<VidType>> adjlist_e = viter.next();
+      Entry<VidType, ArrayList<Writable>> edata_e = diter.next();
+      ArrayList<VidType> target_list = adjlist_e.getValue();
+      ArrayList<Writable> edata_list = edata_e.getValue();
+    
+      Writable r = reduceFunc.base();
+      
+      for (int i = 0; i < target_list.size(); i++)
+        r = reduceFunc.reduce(edata_list.get(i), r);
 
-    // Apply
-    for (int i = 0; i < data.size(); i++) {
-      Writable res = applyFunc.reduce(data.get(i), r);
-      // Output
-      if (reduceEndPoint == EdgeTransformMR.SOURCE)
-        out.collect(new Text(key.toString()), new Text(vids.get(i).toString()
-            + "\t" + res.toString()));
-      else
-        out.collect(new Text(vids.get(i).toString()), new Text(key.toString()
-            + "\t" + res.toString()));
+      for (int i = 0; i < target_list.size(); i++) {
+        Writable res = applyFunc.reduce(edata_list.get(i), r);
+    
+        if (reduceEndPoint == EdgeTransformMR.SOURCE) {
+          
+          textKey.set(adjlist_e.getKey().toString());
+          textValue.set(target_list.get(i).toString() + "\t" + res.toString());
+          out.collect(textKey, textValue);
+
+        } else {
+          textKey.set(target_list.get(i).toString());
+          textValue.set(adjlist_e.getKey().toString()+ "\t" + res.toString());
+          out.collect(textKey, textValue);
+        }
+      }
     }
   }
 
+  private Text textKey;
+  private Text textValue;
+  private HashMap<VidType, ArrayList<VidType>> adjlist;
+  private HashMap<VidType, ArrayList<Writable>> edata;
+
+  private GraphParser graphparser;
+  private FieldParser edataparser;
+  private FieldParser vidparser;
   private Functional reduceFunc;
   private Functional applyFunc;
   private boolean reduceEndPoint;

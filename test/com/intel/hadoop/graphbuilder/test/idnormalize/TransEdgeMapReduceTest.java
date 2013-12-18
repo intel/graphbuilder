@@ -31,7 +31,6 @@ import com.intel.hadoop.graphbuilder.parser.StringParser;
  * com.intel.hadoop.graphbuilder.test.idnormalize.TransEdgeMapReduceTest input
  * output
  * 
- * @author Haijie Gu
  */
 public class TransEdgeMapReduceTest {
   public static void main(String[] args) throws IOException {

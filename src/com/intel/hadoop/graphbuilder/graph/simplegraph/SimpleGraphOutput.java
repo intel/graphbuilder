@@ -35,7 +35,7 @@ import com.intel.hadoop.graphbuilder.io.MultiDirOutputFormat;
 /**
  * Controls the output of a {@code SimpleGraph} or a {@code SimpleSubGraph}. It
  * outputs the graph into 3 parts: edge data, adjacency list and a metafile
- * sotring the number of edges in the partition or subpartition. The output
+ * sorting the number of edges in the partition or subpartition. The output
  * directory is organized as follows:
  * <ul>
  * <li>Edge data list: $prefix/partition{$i}/subpart{$j}/edata</li>
@@ -68,7 +68,13 @@ public class SimpleGraphOutput implements GraphOutput {
     int subpid = -1;
     if (g instanceof SimpleSubGraph) {
       subpid = ((SimpleSubGraph) g).subpid();
+    } else if (g instanceof SimpleSubGraphWithFastUtil) {
+      subpid = ((SimpleSubGraphWithFastUtil) g).subpid();
+      //useFastUtil = 1;
+    //} else {
+      // need more refinement..
     }
+
     String basedir = subpid >= 0 ? "partition" + pid + "/subpart" + subpid
         : "partition" + pid;
 
@@ -78,19 +84,31 @@ public class SimpleGraphOutput implements GraphOutput {
     out.collect(new Text(emetaout), new Text("{\"numEdges\":" + g.numEdges()
         + "}"));
 
-    StringWriter edataWriter = formatter.edataWriter((SimpleGraph) g);
-    if (clearAfterWrite)
-      ((SimpleGraph) g).clearEdataList();
+    //StringWriter edataWriter;
     String edataout = basedir + " edata";
-    out.collect(new Text(edataout), new Text(edataWriter.toString()));
+
+    formatter.set(edataout, out);
+    StringWriter edataWriter = formatter.edataWriter((SimpleGraphWithFastUtil) g);
+    //StringWriter edataWriter = formatter.edataWriter((SimpleGraph) g);
+
+    if (clearAfterWrite) {
+        ((SimpleGraphWithFastUtil) g).clearEdataList();
+        //((SimpleGraph) g).clearEdataList();
+    }
+    
     edataWriter.close();
     LOG.debug("Done collecting edata: " + pid);
 
     /* Output the graph structure. */
     LOG.debug("Collecting graph structure: " + pid);
-    StringWriter structureWriter = formatter.structWriter(g);
+    StringWriter structureWriter;
     String structout = basedir + " edgelist";
-    out.collect(new Text(structout), new Text(structureWriter.toString()));
+
+    formatter.set(structout, out);
+
+    structureWriter = formatter.structWriter((SimpleGraphWithFastUtil)g);
+    //structureWriter = formatter.structWriter(g);
+
     if (clearAfterWrite)
       g.clear();
     structureWriter.close();
@@ -101,6 +119,7 @@ public class SimpleGraphOutput implements GraphOutput {
   public void writeAndClear(Graph g, EdgeFormatter formatter,
       OutputCollector out, Reporter reporter) throws IOException {
     clearAfterWrite = true;
+	LOG.error("Entered writeAndClear with " + g.toString());
     write(g, formatter, out, reporter);
   }
 

@@ -21,7 +21,6 @@ package com.intel.hadoop.graphbuilder.util;
 /**
  * Implementation of a hash combine from boost.
  * 
- * @author Haijie Gu
  * 
  */
 public class HashUtil {

@@ -63,6 +63,7 @@ public class CreateGraphMapper extends MapReduceBase implements
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
+    mapkey = new IntWritable();
   }
 
   @Override
@@ -78,19 +79,24 @@ public class CreateGraphMapper extends MapReduceBase implements
       while (eiter.hasNext()) {
         Edge e = eiter.next();
         mapVal.init(VertexEdgeUnionType.EDGEVAL, e);
-        out.collect(new IntWritable(e.hashCode()), mapVal);
+        mapkey.set(e.hashCode());
+        out.collect(mapkey, mapVal);
+
       }
 
       while (viter.hasNext()) {
         Vertex v = viter.next();
         mapVal.init(VertexEdgeUnionType.VERTEXVAL, v);
-        out.collect(new IntWritable(v.hashCode()), mapVal);
+        mapkey.set(v.hashCode());
+        out.collect(mapkey, mapVal);
+
       }
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
+  private IntWritable mapkey;
   private VertexEdgeUnionType mapVal;
   private GraphTokenizer tokenizer;
   protected Class valClass;

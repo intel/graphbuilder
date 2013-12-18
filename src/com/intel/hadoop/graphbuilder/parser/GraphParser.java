@@ -29,7 +29,6 @@ import com.intel.hadoop.graphbuilder.graph.Vertex;
  * provides functionality of taking in a String and return an Edge or Vertex
  * Object associated with specific Vid, Vdata and Edata types.
  * 
- * 
  * @param <VidType>
  * @param <VertexData>
  * @param <EdgeData>

@@ -67,9 +67,14 @@ public class CreateWordCountGraph {
     Job job = new CreateWordCountGraph().new Job();
     String wikiinput = args[0];
     String graphoutput = args[1];
-    if (args.length >= 3)
+   
+     
+    if (args.length > 2)
       job.addUserOpt("Dictionary", args[2]);
+    if (args.length > 3)
+      job.addUserOpt("StopWords", args[3]);
 
+    
     GraphTokenizer tokenizer = new WordCountGraphTokenizer();
     InputFormat format = new WikiPageInputFormat();
 

@@ -31,8 +31,6 @@ import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleJsonFormatter;
 /**
  * Unit test for SimpleGraph.
  * 
- * @author Haijie Gu
- * 
  */
 public class SimpleGraphTest {
 
@@ -56,8 +54,7 @@ public class SimpleGraphTest {
     assertEquals(mygraph.numEdges(), sources.size());
   }
 
-  @Test
-  public void testGraphFormatter() {
+  /*public void testGraphFormatter() {
     SimpleGraph mygraph = new SimpleGraph();
     List<Integer> sources = Arrays.asList(1, 2, 3, 4, 5);
     List<Integer> targets = Arrays.asList(5, 4, 3, 2, 1);
@@ -79,6 +76,6 @@ public class SimpleGraphTest {
     s = formatter.edataWriter(mygraph).toString();
     expected = "[\"a\",\"b\",\"c\",\"d\",\"e\"]";
     assertEquals(expected, s);
-  }
+  }*/
 
 }

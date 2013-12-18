@@ -40,10 +40,14 @@ import com.intel.hadoop.graphbuilder.graph.GraphOutput;
 import com.intel.hadoop.graphbuilder.graph.JsonVrecordFormatter;
 import com.intel.hadoop.graphbuilder.graph.VertexRecord;
 import com.intel.hadoop.graphbuilder.graph.VrecordFormatter;
+import com.intel.hadoop.graphbuilder.graph.EdgeFormatter;
 import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleGraph;
+import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleGraphWithFastUtil;
 import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleGraphOutput;
 import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleJsonFormatter;
+import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleJsonFormatterWithFastUtil;
 import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleSubGraph;
+import com.intel.hadoop.graphbuilder.graph.simplegraph.SimpleSubGraphWithFastUtil;
 import com.intel.hadoop.graphbuilder.partition.mapreduce.keyvalue.CombinedEdgeValueType;
 import com.intel.hadoop.graphbuilder.partition.mapreduce.keyvalue.CombinedVrecordValueType;
 import com.intel.hadoop.graphbuilder.partition.mapreduce.keyvalue.IngressKeyType;
@@ -89,7 +93,7 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
     this.numProcs = job.getInt("numProcs", 1);
     this.subpartPerPartition = job.getInt("subpartPerPartition", 1);
     // Switch to GLGraph by uncommenting the next line.
-    // graphOutput = new GLGraphOutput(numProcs);
+    // graphOutput = new GLGraphOutput();
     graphOutput = new SimpleGraphOutput();
     graphOutput.configure(job);
   }
@@ -130,29 +134,26 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
    */
   @SuppressWarnings("unchecked")
   protected void reduceEdge(int pid, Iterator<ValueType> iter,
-      OutputCollector<Text, Text> out, Reporter reporter) throws Exception {
+          OutputCollector<Text, Text> out, Reporter reporter) throws Exception {
 
-    // Switch to GLGraph by uncommenting the next line.
-    // myGraph = new GLGraph<VidType, VertexData, EdgeData>();
-    myGraph = new SimpleSubGraph<VidType, VertexData, EdgeData>();
-    myGraph.setPid(pid / subpartPerPartition);
-    ((SimpleSubGraph) myGraph).setSubPid(pid % subpartPerPartition);
+      myGraph = new SimpleSubGraphWithFastUtil<VidType, VertexData, EdgeData>();
+      myGraph.setPid(pid / subpartPerPartition);
+      ((SimpleSubGraphWithFastUtil) myGraph).setSubPid(pid % subpartPerPartition);
 
-    LOG.info("Reduce edges for graph: " + pid);
-    while (iter.hasNext()) {
-      ValueType val = iter.next();
-      CombinedEdgeValueType evalue = val.edgeValue();
-      myGraph.addEdges(evalue.sources(), evalue.targets(), evalue.edata());
-    }
+      LOG.info("Reduce edges for graph: " + pid);
+      while (iter.hasNext()) {
+          ValueType val = iter.next();
+          CombinedEdgeValueType evalue = val.edgeValue();
+          myGraph.addEdges(evalue.sources(), evalue.targets(), evalue.edata());
+      }
 
-    // Switch to GLGraph by uncommenting the next line.
-    // GLJsonFormatter formatter = new GLJsonFormatter();
-    SimpleJsonFormatter formatter = new SimpleJsonFormatter();
-    LOG.info("Write out graph " + pid + " with " + myGraph.numEdges()
-        + " edges");
-    graphOutput.writeAndClear(myGraph, formatter, out, reporter);
+      formatter = new SimpleJsonFormatterWithFastUtil();
 
-    LOG.info("Done reducing graph:" + pid + ".");
+      LOG.info("Write out graph " + pid + " with " + myGraph.numEdges()
+              + " edges");
+      graphOutput.writeAndClear(myGraph, formatter, out, reporter);
+
+      LOG.info("Done reducing graph:" + pid + ".");
   }
 
   /**
@@ -170,7 +171,7 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
     BitSet mirrors = new BitSet(numProcs);
     int inEdges = 0;
     int outEdges = 0;
-      
+
     while (iter.hasNext()) {
       ValueType val = iter.next();
 
@@ -183,10 +184,6 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
         mirrors.set(piditer.next());
       }
 
-      vrecord.setMirrors(mirrors);
-      vrecord.setInEdges(inEdges);
-      vrecord.setOutEdges(outEdges);
-
       // merge vdata
       if (vrecordValue.hasVdata()) {
         if (vrecord.vdata() == null)
@@ -196,6 +193,10 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
         }
       }
     }
+
+    vrecord.setMirrors(mirrors);
+    vrecord.setInEdges(inEdges);
+    vrecord.setOutEdges(outEdges);
 
     // Set owner
     Random generator = new Random();
@@ -212,4 +213,5 @@ public class EdgeIngressReducer<VidType extends WritableComparable<VidType>, Ver
   protected Graph<VidType, VertexData, EdgeData> myGraph;
   protected VertexRecord<VidType, VertexData> vrecord;
   protected GraphOutput graphOutput;
+  private EdgeFormatter formatter;
 }

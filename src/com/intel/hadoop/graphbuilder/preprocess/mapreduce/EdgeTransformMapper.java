@@ -21,6 +21,7 @@ package com.intel.hadoop.graphbuilder.preprocess.mapreduce;
 import java.io.IOException;
 
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobConf;
@@ -45,7 +46,7 @@ import com.intel.hadoop.graphbuilder.preprocess.mapreduce.keyvalue.PairListType;
  */
 public class EdgeTransformMapper<VidType extends WritableComparable<VidType>>
     extends MapReduceBase implements
-    Mapper<LongWritable, Text, VidType, PairListType> {
+    Mapper<LongWritable, Text, IntWritable, Text> {
 
   private static final Logger LOG = Logger.getLogger(EdgeTransformMapper.class);
 
@@ -62,7 +63,6 @@ public class EdgeTransformMapper<VidType extends WritableComparable<VidType>>
       this.edataparser = (FieldParser) Class.forName(job.get("EdataParser"))
           .newInstance();
       this.valClass = job.getMapOutputValueClass();
-      val = (PairListType) valClass.newInstance();
     } catch (InstantiationException e) {
       e.printStackTrace();
     } catch (IllegalAccessException e) {
@@ -70,11 +70,13 @@ public class EdgeTransformMapper<VidType extends WritableComparable<VidType>>
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
+    edgeKey = new IntWritable();
+    edgeValue = new Text();
   }
 
   @Override
   public void map(LongWritable key, Text value,
-      OutputCollector<VidType, PairListType> out, Reporter report)
+      OutputCollector<IntWritable, Text> out, Reporter report)
       throws IOException {
     String line = value.toString();
     try {
@@ -82,11 +84,14 @@ public class EdgeTransformMapper<VidType extends WritableComparable<VidType>>
       if (graphparser.isEdgeData(line)) {
         Edge e = graphparser.parseEdge(line, vidparser, edataparser);
         if (reduceEndPoint == EdgeTransformMR.SOURCE) {
-          val.init(e.target(), e.EdgeData());
-          out.collect((VidType) e.source(), val);
+          edgeKey.set(e.source().hashCode());
+          edgeValue.set(value.toString());
+          out.collect(edgeKey, edgeValue);
         } else {
-          val.init(e.source(), e.EdgeData());
-          out.collect((VidType) e.target(), val);
+          edgeKey.set(e.target().hashCode());
+          edgeValue.set(e.target().toString() + "\t" + e.source().toString() 
+              + "\t" + e.EdgeData().toString());
+          out.collect(edgeKey, edgeValue);
         }
       } else {
         LOG.error("Skip line: " + line);
@@ -97,6 +102,8 @@ public class EdgeTransformMapper<VidType extends WritableComparable<VidType>>
 
   }
 
+  private IntWritable edgeKey;
+  private Text edgeValue;
   private PairListType val;
   private GraphParser graphparser;
   private FieldParser vidparser;

@@ -1,0 +1,24 @@
+/* ::::: http://192.168.4.102/wordle/style.css ::::: */
+body {
+    text-align: center;
+    font-family: sans-serif;
+}
+.body {
+    text-align: center;
+    font-family: sans-serif;
+}
+.cloud { display: inline-block; width: 200px; height: 200px; }
+.setting { display: inline-block; width: 100px; }
+.label { font-size: 14pt; }
+/* ::::: http://visapi-gadgets.googlecode.com/svn/trunk/termcloud/tc.css ::::: */
+
+.term-cloud { font-family: arial; font-size: 10px; }
+.term-cloud-1 { font-size: 10px; color: rgb(172, 193, 243); }
+.term-cloud-2 { font-size: 14px; color: rgb(134, 160, 220); }
+.term-cloud-3 { font-size: 18px; color: rgb(96, 126, 197); }
+.term-cloud-4 { font-size: 22px; color: rgb(38, 76, 162); }
+.term-cloud-5 { font-size: 26px; color: rgb(19, 59, 151); }
+.term-cloud-6 { font-size: 32px; color: rgb(0, 42, 139); }
+.term-cloud-7 { font-size: 36px; color: rgb(7, 26, 65); }
+.term-cloud-link { text-decoration: none; }
+.term-cloud-link:hover { text-decoration: underline; }

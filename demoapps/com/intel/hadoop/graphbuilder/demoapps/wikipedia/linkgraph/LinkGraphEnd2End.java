@@ -29,6 +29,8 @@ import org.apache.log4j.Logger;
 
 import com.intel.hadoop.graphbuilder.util.Timer;
 
+import com.intel.hadoop.graphbuilder.partition.mapreduce.edge.EdgeIngressMR;
+
 public class LinkGraphEnd2End {
   private static final Logger LOG = Logger.getLogger(LinkGraphEnd2End.class);
 
@@ -42,13 +44,29 @@ public class LinkGraphEnd2End {
    * @throws CannotCompileException 
    */
   public static void main(String[] args) {
+
+    if (args.length < 3) {
+        System.out.println("Usage:\tLinkGraphEnd2End <# of partitions> <input-dir> <output-dir> <edge ingress method>");
+        return;
+    }
+
     int npart = Integer.parseInt(args[0]);
+
     String rawinput = args[1];
     String output = args[2];
+	String ingressCode = args[3];
 
     String rawgraph = output + "/graph_raw";
     String normedgraph = output + "/graph_norm";
     String partitionedgraph = output + "/graph_partitioned";
+	String input2norm = rawgraph;
+
+
+    Integer ic = Integer.parseInt(ingressCode);
+    if (ic > EdgeIngressMR.IngressCodeLimit) {
+        System.out.println("ERROR: IngressCode " + ic + " is invalid. It must be 0-" + EdgeIngressMR.IngressCodeLimit);
+        return;
+    }
 
     Timer timer = new Timer();
     timer.start();
@@ -70,12 +88,12 @@ public class LinkGraphEnd2End {
       return;
     }
 
-    try {
-    new PartitionGraph().main(new String[] { String.valueOf(npart),
-        normedgraph, partitionedgraph });
-    LOG.info("Partition graph finished in : " + timer.time_since_last()
-        + " seconds");
-    } catch (Exception e) {
+	try {
+		new PartitionGraph().main(new String[] { String.valueOf(npart),
+				normedgraph, partitionedgraph, ingressCode });
+		LOG.info("Partition graph finished in : " + timer.time_since_last()
+				+ " seconds");
+	} catch (Exception e) {
       e.printStackTrace();
       return;
     }

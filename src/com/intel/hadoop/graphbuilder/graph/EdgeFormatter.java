@@ -19,7 +19,7 @@
 package com.intel.hadoop.graphbuilder.graph;
 
 import java.io.StringWriter;
-
+import org.apache.hadoop.mapred.OutputCollector;
 /**
  * Controls the low level string representation of the graph output.
  * 
@@ -42,5 +42,14 @@ public interface EdgeFormatter {
    *         adjacency structure.
    */
   StringWriter edataWriter(Graph g);
+
+
+  /**
+   * @param filename
+   *        the file to output
+   * @param out
+   *        the MapReduce output collector
+   */
+  void set(String filename, OutputCollector out);
 
 }

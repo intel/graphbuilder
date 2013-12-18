@@ -1,0 +1,5 @@
+Logger requires parse.sh, start.sh stop.sh to be copied on all the slaves machine in the cluster in $HOME/log directory.
+
+To start the logging user needs to invoke collect.sh <interval> on the master node. 
+To stop kill the collect.sh script and run stop-all.sh script to stop logging on all the slaves.
+

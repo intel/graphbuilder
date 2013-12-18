@@ -37,7 +37,7 @@ import com.intel.hadoop.graphbuilder.parser.GraphParser;
 /**
  * This MapReduce class maps a list of unique vertex into 2 parts of output: A
  * dictionary from rawId to newId, and a new vertex data file using newId. The
- * domain of newId is consecutive integers from 0 to |V|-1.
+ * domain of newId is consecutive intergers from 0 to |V|-1.
  * <p>
  * Input directory: list of unique vertex data. Output directory:
  * <ul>
@@ -87,6 +87,8 @@ public class HashIdMR {
     conf.setOutputFormat(MultiDirOutputFormat.class);
 
     conf.setInt("mapred.line.input.format.linespermap", linespermap);
+    // conf.setInt("mapreduce.input.lineinputformat.linespermap", linespermap); for YARN
+
     conf.set("GraphParser", graphparser.getClass().getName());
     conf.set("VidParser", vidparser.getClass().getName());
     conf.set("VdataParser", vdataparser.getClass().getName());
@@ -97,7 +99,7 @@ public class HashIdMR {
     LOG.info("====== Job: Create integer Id maps for vertices ==========");
     LOG.info("Input = " + inputpath);
     LOG.info("Output = " + outputpath);
-    LOG.debug("Lines per map = 6000000");
+    LOG.debug("Lines per map = " + linespermap);
     LOG.debug("GraphParser = " + graphparser.getClass().getName());
     LOG.debug("VidParser = " + vidparser.getClass().getName());
     LOG.debug("VdataParser = " + vdataparser.getClass().getName());

@@ -30,10 +30,6 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 
-/**
- * Reducer function for SortDictMR job 
- * 
- */
 public class SortDictReducer extends MapReduceBase implements
     Reducer<IntWritable, Text, Text, Text> {
   private MultipleOutputs mos;

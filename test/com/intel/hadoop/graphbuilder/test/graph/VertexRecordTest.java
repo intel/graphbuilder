@@ -38,8 +38,6 @@ import com.intel.hadoop.graphbuilder.types.StringType;
 /**
  * Unit test for VertexRecord.
  *
- * @author Haijie Gu
- *
  */
 public class VertexRecordTest {
 

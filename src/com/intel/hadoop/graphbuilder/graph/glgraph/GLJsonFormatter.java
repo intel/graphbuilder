@@ -25,12 +25,20 @@ import net.minidev.json.JSONObject;
 
 import com.intel.hadoop.graphbuilder.graph.Graph;
 import com.intel.hadoop.graphbuilder.graph.EdgeFormatter;
+import org.apache.hadoop.mapred.OutputCollector;
 
 /**
  * A JSON encoding of GLGraph.
  * 
  */
 public class GLJsonFormatter implements EdgeFormatter {
+
+
+  public void set(String name, OutputCollector out) 
+  {
+
+    //to be implemented
+  }
 
   /**
    * @param g

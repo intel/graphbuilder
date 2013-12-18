@@ -24,11 +24,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.OutputCollector;
+
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
 
 import com.intel.hadoop.graphbuilder.graph.Graph;
 import com.intel.hadoop.graphbuilder.graph.EdgeFormatter;
+import org.apache.hadoop.mapred.OutputCollector;
 
 /**
  * A JSON encoding of {@code SimpleGraph} or {@code SimpleSubGraph}.
@@ -36,9 +40,18 @@ import com.intel.hadoop.graphbuilder.graph.EdgeFormatter;
  */
 public class SimpleJsonFormatter implements EdgeFormatter {
 
+ 
+  @Override
+  public void set(String name, OutputCollector out) 
+  {
+    this.filename = new Text(name);
+    this.output = out;
+  }
+
   @Override
   public StringWriter structWriter(Graph g) {
     JSONObject obj = new JSONObject();
+    //dont need StringWriter with streamed JSON
     StringWriter out = new StringWriter();
     int count = 0;
     List sortedKey = ((SimpleGraph) g).vertices();
@@ -48,8 +61,9 @@ public class SimpleJsonFormatter implements EdgeFormatter {
         obj.clear();
         obj.put("source", sortedKey.get(i));
         obj.put("targets", ((SimpleGraph) g).outEdgeTargetIds(sortedKey.get(i)));
-        obj.writeJSONString(out);
-        out.append("\n");
+        if (output!=null) {
+          output.collect(filename, new Text(obj.toString()));
+        } 
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -58,6 +72,7 @@ public class SimpleJsonFormatter implements EdgeFormatter {
   }
 
   public StringWriter edataWriter(Graph g) {
+    //dont need StringWriter with streamed JSON
     StringWriter out = new StringWriter();
     int count = 0;
     List sortedKey = ((SimpleGraph) g).vertices();
@@ -68,12 +83,13 @@ public class SimpleJsonFormatter implements EdgeFormatter {
         List data = (List) ((SimpleGraph) g).outEdgeData(sortedKey.get(i));
         buffer.addAll(data);
         if (buffer.size() > recordPerLine) {
-          JSONValue.writeJSONString(buffer, out);
-          out.append("\n");
+          if (output!=null)
+            output.collect(filename, new Text(buffer.toString()));
           buffer.clear();
         }
       }
-      JSONValue.writeJSONString(buffer, out);
+      if(output!=null)
+        output.collect(filename, new Text(buffer.toString()));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -81,4 +97,6 @@ public class SimpleJsonFormatter implements EdgeFormatter {
   }
 
   private static int recordPerLine = 1000;
+  private Text filename;
+  private OutputCollector output;
 }

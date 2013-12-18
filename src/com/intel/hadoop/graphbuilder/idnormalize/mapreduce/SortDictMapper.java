@@ -34,11 +34,6 @@ import org.apache.log4j.Logger;
 
 import com.intel.hadoop.graphbuilder.parser.FieldParser;
 
-/**
- * Mapper function for SortDictMR job 
- * 
- */
-
 public class SortDictMapper extends MapReduceBase implements
     Mapper<LongWritable, Text, IntWritable, Text> {
 

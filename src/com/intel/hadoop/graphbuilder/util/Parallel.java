@@ -27,9 +27,6 @@ import java.util.concurrent.Future;
 
 /**
  * Parallel for equivalent implementation.
- * 
- * @author Haijie Gu
- * 
  */
 public class Parallel {
   private static final int NUM_CORES = Runtime.getRuntime()
@@ -38,8 +35,6 @@ public class Parallel {
 
   /**
    * Funtion interface for the parfor operation.
-   * 
-   * @author Haijie Gu
    * 
    * @param <T>
    */

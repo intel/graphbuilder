@@ -30,7 +30,7 @@ import com.intel.hadoop.graphbuilder.types.TypeFactory;
 /**
  * A Factory class that dynamically creates a concrete {@code VertexEdgeUnionType}
  * which is used in {@code CreateGraphMR} as the intermediate value type.
- */
+  */
 public class PreprocessJobValueFactory {
   private static ClassPool pool = ClassPool.getDefault();
 

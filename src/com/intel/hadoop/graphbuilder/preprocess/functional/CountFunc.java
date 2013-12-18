@@ -27,7 +27,6 @@ import com.intel.hadoop.graphbuilder.types.IntType;
 /**
  * Represents a counting functional: f x y -> y + 1
  * 
- * 
  * @param <T>
  */
 public class CountFunc<T> implements Functional<T, IntType> {

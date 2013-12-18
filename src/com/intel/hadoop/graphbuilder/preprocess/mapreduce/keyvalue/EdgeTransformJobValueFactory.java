@@ -30,7 +30,7 @@ import com.intel.hadoop.graphbuilder.types.TypeFactory;
 /**
  * A Factory class that dynamically creates a concrete {@code PairListType}
  * which is used in {@code EdgeTransformMR} as the intermediate value type.
- */
+  */
 public class EdgeTransformJobValueFactory {
   private static ClassPool pool = ClassPool.getDefault();
 

@@ -93,7 +93,7 @@ public abstract class AbstractPartitionJob<VidType extends WritableComparable<Vi
    * @throws NotFoundException
    * @throws CannotCompileException
    */
-  public boolean run(int nparts, String[] inputs, String output)
+  public boolean run(int nparts, String[] inputs, String output, int ingressCode)
       throws NotFoundException, CannotCompileException {
     EdgeIngressMR job1 = new EdgeIngressMR(
         graphParserClass(),
@@ -113,7 +113,7 @@ public abstract class AbstractPartitionJob<VidType extends WritableComparable<Vi
     VrecordIngressMR job2 = new VrecordIngressMR();
 
     try {
-      job1.run(inputs, output + "/edges", nparts, "greedy");
+      job1.run(inputs, output + "/edges", nparts, ingressCode);
       job2.run(nparts, output + "/edges/vrecord", output + "/vrecords");
     } catch (Exception e) {
       e.printStackTrace();

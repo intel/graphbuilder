@@ -32,7 +32,6 @@ import com.intel.hadoop.graphbuilder.graph.Vertex;
  * Abstract union type of {@code Vertex} and {@code Edge}. Used as intermediate
  * map output value to hold either a vertex or an edge.
  * 
- * 
  * @param <VidType>
  * @param <VertexData>
  * @param <EdgeData>

@@ -1,0 +1,22 @@
+body {
+    text-align: center;
+    font-family: sans-serif;
+}
+.body {
+    text-align: center;
+    font-family: sans-serif;
+}
+.cloud {
+    display: inline-block;
+    width: 200px;
+    height: 200px;
+}
+
+.setting {
+    display: inline-block;
+    width: 100px;
+}
+
+.label {
+    font-size: 14px;
+}

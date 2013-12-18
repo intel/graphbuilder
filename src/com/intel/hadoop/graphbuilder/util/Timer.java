@@ -22,7 +22,6 @@ package com.intel.hadoop.graphbuilder.util;
  * A simple timer class that can be used for benchmarking/timing up to
  * microsecond resolution.
  * 
- * @author Haijie Gu
  */
 public class Timer {
   private long start;

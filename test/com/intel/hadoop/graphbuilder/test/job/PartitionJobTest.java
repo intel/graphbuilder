@@ -31,7 +31,6 @@ import com.intel.hadoop.graphbuilder.types.IntType;
  * Test runnable for partitioning a graph with integer vertex id and empty
  * vertex and edge data.
  *
- * @author Haijie Gu
  */
 public class PartitionJobTest {
   public class Job extends AbstractPartitionJob {
@@ -65,9 +64,10 @@ public class PartitionJobTest {
     int nparts = Integer.parseInt(args[0]);
     String input = args[1];
     String output = args[2];
+	String ingress = args[3];
 
     PartitionJobTest test = new PartitionJobTest();
     Job job = test.new Job();
-    job.run(nparts, new String[] { input + "/vdata", input + "/edata" }, output);
+    job.run(nparts, new String[] { input + "/vdata", input + "/edata" }, output, Integer.parseInt(ingress));
   }
 }

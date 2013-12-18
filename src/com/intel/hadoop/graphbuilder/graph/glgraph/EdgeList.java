@@ -85,7 +85,6 @@ public class EdgeList implements Iterable<EdgeType> {
   /**
    * This iterator iterates lazily over the {@code EdgeList}.
    * 
-   * @author Haijie Gu
    */
   public class EdgeIterator implements Iterator<EdgeType> {
     /** Create an the begin iterator of the list. */
@@ -122,7 +121,6 @@ public class EdgeList implements Iterable<EdgeType> {
    * Comparator of two EdgeType based on the numeric ordering of the center of
    * the edge.
    * 
-   * @author Haijie Gu
    * @param <EdgeType>
    *          type of the elements to be compared with.
    */

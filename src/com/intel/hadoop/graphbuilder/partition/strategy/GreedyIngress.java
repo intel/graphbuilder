@@ -64,11 +64,13 @@ public class GreedyIngress<VidType> implements Ingress<VidType> {
       BitSet bitset = vertexPresence.get(vid);
       if (!bitset.get(pid)) {
         bitset.set(pid);
+        //procLoad.set(pid, procLoad.get(pid) + 1);
       }
     } else {
       BitSet bitset = new BitSet(numProcs);
       bitset.set(pid);
       vertexPresence.put(vid, bitset);
+      //procLoad.set(pid, procLoad.get(pid) + 1);
     }
   }
 

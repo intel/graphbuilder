@@ -36,7 +36,6 @@ import com.intel.hadoop.graphbuilder.preprocess.inputformat.GraphTokenizer;
 /**
  * Test runnable for creating a link graph from wikipedia xml file.
  * 
- * @author Haijie Gu
  */
 public class PreprocessJobTest {
   public class Job extends AbstractPreprocessJob {

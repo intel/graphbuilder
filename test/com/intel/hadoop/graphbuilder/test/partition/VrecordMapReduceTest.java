@@ -28,7 +28,6 @@ import com.intel.hadoop.graphbuilder.partition.mapreduce.vrecord.VrecordIngressM
  * com.intel.hadoop.graphbuilder.test.partition.VrecordIngressTest 8 input
  * output
  * 
- * @author Haijie Gu
  */
 public class VrecordMapReduceTest {
   public static void main(String[] args) throws IOException {

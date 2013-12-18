@@ -33,7 +33,6 @@ import com.intel.hadoop.graphbuilder.util.Parallel.Operation;
  * Test for {@code Parallel}.
  * 
  * @see Parallel
- * @author Haijie Gu
  * 
  */
 public class ParallelTest {

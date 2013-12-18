@@ -26,7 +26,6 @@ import com.intel.hadoop.graphbuilder.util.Pair;
 /**
  * Helper class for iterating a list of pairs.
  * 
- * 
  * @param <T1>
  * @param <T2>
  */

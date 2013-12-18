@@ -21,7 +21,6 @@ package com.intel.hadoop.graphbuilder.util;
 /**
  * Represents a pair of objects.
  * 
- * @author Haijie Gu
  * 
  * @param <L>
  * @param <R>

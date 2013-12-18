@@ -1,0 +1,102 @@
+body {
+    text-align: center;
+    font-family: sans-serif;
+}
+#instrument_panel {
+    text-align: center;
+    font-family: sans-serif;
+}
+
+.metric_summary {
+    display: inline-block;
+    
+}
+
+.metric_summary .name {
+    display: none;
+    text-align: center;
+    font-family: sans-serif;
+}
+
+.metric_summary .value {
+    display: none;
+    text-align: center;
+    font-family: sans-serif;
+}
+
+
+.aggregate {
+    display: inline-block;
+}
+
+.aggregate .chart {
+   width: 520px;
+   height: 250px;
+}
+
+.aggregate .name {
+  display: none
+}
+
+
+.aggregate .chart {
+   width: 520px;
+   height: 250px;
+}
+
+.node {
+    display: inline-block;
+}
+
+
+.node .name {
+  display: none
+}
+
+
+.node .chart {
+   width: 520px;
+   height: 250px;
+}
+
+
+.graph_builder {
+    display: inline-block;
+}
+
+.graph_builder .chart {
+   width: 520px;
+   height: 250px;
+}
+
+.graph_builder .name {
+  display: none
+}
+
+
+.graph_builder .chart {
+   width: 520px;
+   height: 250px;
+}
+
+#graph_builder_phase_name {
+   font-size: 20px;
+   margin-top: 3px;
+   margin-bottom: 1px;
+   background: #2C9735;
+   margin-left: auto;
+   margin-right: auto;
+   width: 40%;
+   color: #FFF;
+}
+
+#graph_builder_progress {
+   margin-top: 2px;
+   margin-bottom: 3px;
+   background: #FFF;
+   color: #2C9735;
+   margin-left: auto;
+   margin-right: auto;
+   width: 75%;
+   height: 20px;
+}

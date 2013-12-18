@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -150,11 +151,11 @@ public class EdgeTransformMR {
     conf.setOutputKeyClass(Text.class);
     conf.setOutputValueClass(Text.class);
 
-    conf.setMapOutputKeyClass(mapkeytype.getClass());
-    conf.setMapOutputValueClass(mapvaltype.getClass());
+    conf.setMapOutputKeyClass(IntWritable.class);
+    conf.setMapOutputValueClass(Text.class);
 
     conf.setMapperClass(EdgeTransformMapper.class);
-    conf.setCombinerClass(EdgeTransformCombiner.class);
+    //conf.setCombinerClass(EdgeTransformCombiner.class);
     conf.setReducerClass(EdgeTransformReducer.class);
 
     conf.setInputFormat(TextInputFormat.class);
@@ -180,72 +181,11 @@ public class EdgeTransformMR {
     else
       LOG.info("Reduce on target");
 
-    if (!checkTypes()) {
-      LOG.fatal("Type check failed."
-          + " Please check the parser and reduce/apply functions are consistent with key/val types.");
-      return;
-    }
     LOG.info("===========================================================");
     JobClient.runJob(conf);
     LOG.info("======================== Done ============================\n");
   }
 
-  /**
-   * Ensure the keytype and valuetype are consistent with the funtional types.
-   * 
-   * @return true if type check.
-   */
-  private boolean checkTypes() {
-    boolean check = true;
-
-    if (!(vidparser.getType()).equals(mapkeytype.getClass())) {
-      LOG.fatal("VidType is not consistant between MapKeyType: "
-          + mapkeytype.getClass().getName() + " and Parser: "
-          + vidparser.getType().getName());
-      check = false;
-    }
-
-    if (!(edataparser.getType().equals(mapvaltype.createRValue().getClass()))) {
-      LOG.fatal("EdgeDataType is not consistant between MapValueType: "
-          + mapvaltype.createRValue().getClass().getName() + " and Parser: "
-          + edataparser.getType().getName());
-      check = false;
-    }
-
-    if (!(mapkeytype.getClass().equals(mapvaltype.createLValue().getClass()))) {
-      LOG.fatal("VidType is not consistant between MapKeyType: "
-          + mapkeytype.getClass().getName() + " and MapValueType: "
-          + mapvaltype.createLValue().getClass().getName());
-      check = false;
-    }
-
-    if (!(reducefunc.getInType().equals(mapvaltype.createRValue().getClass()))) {
-      LOG.fatal("Input type of the reduce function should be equal to the EdgeData type. Expect: "
-          + reducefunc.getInType().getName()
-          + "\t Actual: "
-          + mapvaltype.createRValue().getClass());
-      check = false;
-    }
-
-    if (!(applyfunc.getInType().equals(mapvaltype.createRValue().getClass()))) {
-      LOG.fatal("Input type of the apply function should be equal to the EdgeData type. Expect: "
-          + reducefunc.getInType().getName()
-          + "\t Actual: "
-          + mapvaltype.createRValue().getClass());
-      check = false;
-    }
-
-    if (!(applyfunc.getOutType().equals(reducefunc.getOutType()))) {
-      LOG.fatal("Output type of the apply function should be equal to the output type of the reduce function. "
-          + "Expect: "
-          + applyfunc.getOutType().getName()
-          + "\t Actual: "
-          + reducefunc.getOutType().getName());
-      check = false;
-    }
-
-    return check;
-  }
 
   private Functional reducefunc;
   private Functional applyfunc;

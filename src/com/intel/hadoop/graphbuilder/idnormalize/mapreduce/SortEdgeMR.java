@@ -53,7 +53,6 @@ public class SortEdgeMR {
    * This mapper class maps each edge into (h(edge.source), edge). The hash
    * function depends on "numChunks" passed through the {@code JobConf}.
    * 
-   * @author Haijie Gu
    */
   public static class SortEdgeMapper extends MapReduceBase implements
       Mapper<LongWritable, Text, IntWritable, Text> {
@@ -98,7 +97,6 @@ public class SortEdgeMR {
    * This reducer class takes the input (hashval, edge) from mapper and outputs
    * edge directly.
    * 
-   * @author Haijie Gu
    */
   public static class SortEdgeReducer extends MapReduceBase implements
       Reducer<IntWritable, Text, IntWritable, Text> {

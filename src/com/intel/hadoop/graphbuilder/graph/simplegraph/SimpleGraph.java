@@ -26,6 +26,9 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+
 import com.intel.hadoop.graphbuilder.graph.Graph;
 import com.intel.hadoop.graphbuilder.graph.VertexRecord;
 import com.intel.hadoop.graphbuilder.graph.glgraph.GLGraph;
@@ -50,9 +53,11 @@ public class SimpleGraph<VidType, VertexData, EdgeData> implements
   public SimpleGraph() {
     numVertices = 0;
     numEdges = 0;
+
     vrecordList = new ArrayList<VertexRecord<VidType, VertexData>>();
     adjlist = new HashMap<VidType, ArrayList<VidType>>();
     edatalist = new HashMap<VidType, ArrayList<EdgeData>>();
+    
   }
 
   /**
@@ -198,4 +203,5 @@ public class SimpleGraph<VidType, VertexData, EdgeData> implements
   private HashMap<VidType, ArrayList<VidType>> adjlist;
   private HashMap<VidType, ArrayList<EdgeData>> edatalist;
   private ArrayList<VertexRecord<VidType, VertexData>> vrecordList;
+
 }

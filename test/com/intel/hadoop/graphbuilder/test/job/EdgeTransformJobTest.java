@@ -35,7 +35,6 @@ import com.intel.hadoop.graphbuilder.types.StringType;
  * Test runnable for transforming the edge data of a graph. The transformation
  * function transforms the word-doc count data into word-doc frequency data.
  *
- * @author Haijie Gu
  */
 public class EdgeTransformJobTest {
   public static class Sum implements Functional<IntType, FloatType> {

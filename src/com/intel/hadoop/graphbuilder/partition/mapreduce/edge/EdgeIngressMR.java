@@ -61,6 +61,8 @@ public class EdgeIngressMR {
 
   private static final Logger LOG = Logger.getLogger(EdgeIngressMR.class);
 
+  public static int IngressCodeLimit = 4;
+
   /** MapReduce Job Counters. */
   public static enum COUNTER {
     NUM_VERTICES, NUM_EDGES
@@ -131,11 +133,19 @@ public class EdgeIngressMR {
    * @param ingress
    */
   public void setIngress(String ingress) {
-    if (ingress.equals("random") || ingress.equals("greedy"))
+    if (ingress.equals("random") || ingress.equals("greedy")
+        || ingress.equals("constrainedgreedy")
+        || ingress.equals("constrainedrandom")
+        || ingress.equals("constrainedpdsrandom")
+        || ingress.equals("constrainedtorusrandom")
+        || ingress.equals("constrainedtorusgreedy")
+        )
       this.ingress = ingress;
     else {
       LOG.error("Unknown ingress method: " + ingress
-          + "\n Supported ingress methods: oblivious, random");
+          + "\n Supported ingress methods: oblivious, random," 
+          + "constrainedgreedy, constrainedrandom, constrainedpdsrandom,"
+          +"constrainedtorusrandom, constrainedtorusgreedy");
       LOG.error("Use the default oblivious ingress");
       this.ingress = "greedy";
     }
@@ -174,11 +184,30 @@ public class EdgeIngressMR {
    * @throws IOException
    */
   public void run(String[] inputpaths, String outputpath, int numProcs,
-      String ingress) throws IOException {
-    this.setIngress(ingress);
+      int ingressCode) throws IOException {
     conf.setJobName(jobName);
     if (this.subpartPerPartition <= 0)
       this.subpartPerPartition = 8;
+
+	switch (ingressCode) {
+		case 0:
+			this.ingress = "random";
+			break;
+		case 1:
+			this.ingress = "greedy";
+			break;
+		case 2:
+			this.ingress = "constrainedrandom";
+			break;
+		case 3:
+			this.ingress = "constrainedgreedy";
+			break;
+		case 4:
+			this.ingress = "constrainedpdsrandom";
+			break;
+	}
+
+    this.setIngress(this.ingress);
 
     LOG.info("===== Job: Partition edges and create vertex records =========");
     LOG.info("input: " + StringUtils.join(inputpaths, ","));
@@ -193,15 +222,34 @@ public class EdgeIngressMR {
     LOG.debug("edataparser = " + this.edataparser.getClass().getName());
     LOG.info("ingress = " + this.ingress);
     LOG.info("gzip = " + Boolean.toString(gzip));
-    LOG.info("===============================================================");
+    
+    if (this.ingress.equals("constrainedpdsrandom")) {
+        int prime = (int)Math.floor(Math.sqrt(numProcs-1));
+        if (numProcs != (prime*prime + prime + 1)){
+            LOG.info("numProcs does not meet requirement.Ingress switchs to constrainedrandom");
+        }
+    }
 
-    conf.set("ingress", this.ingress);
-    conf.setInt("numProcs", numProcs);
+	conf.set("ingress", this.ingress);
+	conf.setInt("numProcs", numProcs);
     conf.set("GraphParser", graphparser.getClass().getName());
     conf.set("VidParser", vidparser.getClass().getName());
     conf.set("VdataParser", vdataparser.getClass().getName());
     conf.set("EdataParser", edataparser.getClass().getName());
     conf.setInt("subpartPerPartition", subpartPerPartition);
+
+    //if ((vidparser.getClass().getName().toLowerCase().endsWith("intparser")
+    //    || vidparser.getClass().getName().toLowerCase().endsWith("longparser"))
+    //    && (edataparser.getClass().getName().toLowerCase().endsWith("intparser")
+    //    || edataparser.getClass().getName().toLowerCase().endsWith("longparser")
+    //    || edataparser.getClass().getName().toLowerCase().endsWith("floatparser")))
+    //{
+    //     //should refine here
+    //     LOG.info("Use fast utility library for managing large graph");
+    //     conf.setInt("useFastUtil", 1);
+    // }
+
+     LOG.info("===============================================================");
 
     conf.setMapOutputKeyClass(this.mapkeytype.getClass());
     conf.setMapOutputValueClass(this.mapvaltype.getClass());
@@ -213,7 +261,7 @@ public class EdgeIngressMR {
     conf.setCombinerClass(EdgeIngressCombiner.class);
     conf.setReducerClass(EdgeIngressReducer.class);
 
-    // GraphOutput output = new GLGraphOutput(numProcs);
+    // GraphOutput output = new GLGraphOutput();
     GraphOutput output = new SimpleGraphOutput();
     output.init(conf);
 

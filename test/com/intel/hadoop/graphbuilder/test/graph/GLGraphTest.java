@@ -52,7 +52,6 @@ import com.intel.hadoop.graphbuilder.types.IntType;
 /**
  * Unit test for GLGraph.
  *
- * @author Haijie Gu
  *
  */
 public class GLGraphTest {

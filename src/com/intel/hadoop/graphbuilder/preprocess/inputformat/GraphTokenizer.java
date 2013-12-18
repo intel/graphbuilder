@@ -79,4 +79,5 @@ public interface GraphTokenizer<VidType extends WritableComparable<VidType>, Ver
    * @return Class of the EdgeData. Used for type safety in the high level.
    */
   Class edataClass();
+
 }

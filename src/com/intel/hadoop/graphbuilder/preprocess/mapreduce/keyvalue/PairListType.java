@@ -34,7 +34,6 @@ import com.intel.hadoop.graphbuilder.util.Pair;
  * map output value type in EdgeTransformMR for holding a list of
  * {@code VidType, EdgeData} pairs.
  * 
- * 
  * @param <T1>
  * @param <T2>
  */

@@ -58,9 +58,10 @@ public class PartitionGraph {
     int npart = Integer.parseInt(args[0]);
     String input = args[1];
     String output = args[2];
+	String ingress = args[3];
     LOG.info("========== Partitioning Graph ============");
     new PartitionGraph().new Job().run(npart, new String[] { input + "/vdata",
-        input + "/edata" }, output);
+        input + "/edata" }, output, Integer.parseInt(ingress));
     LOG.info("========== Done partitioning graph ============");
   }
 }

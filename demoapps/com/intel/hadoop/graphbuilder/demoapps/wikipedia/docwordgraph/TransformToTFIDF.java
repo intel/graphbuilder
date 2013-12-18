@@ -38,15 +38,13 @@ import com.intel.hadoop.graphbuilder.types.StringType;
 /**
  * A runnable class that transforms a word count value into tfidf value on the
  * edge.
- * @author Haijie Gu
   */
+
 public class TransformToTFIDF {
   private static final Logger LOG = Logger.getLogger(TransformToTFIDF.class);
 
   /**
    * f : tf * df -> tfidf
-   * @author Haijie Gu
-   *
    */
   public final static class IDFfunc implements Functional<FloatType, FloatType> {
     @Override
@@ -82,7 +80,6 @@ public class TransformToTFIDF {
 
   /**
    * f : x * y -> x + y
-   * @author Haijie Gu
    *
    */
   public final static class Sumfunc implements Functional<IntType, FloatType> {
@@ -146,7 +143,6 @@ public class TransformToTFIDF {
 
   /**
    * f : x * y -> y + 1
-   * @author Haijie Gu
    *
    */
   public final static class FloatCountFunc implements

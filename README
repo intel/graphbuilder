@@ -1,26 +1,42 @@
-Data relationships play a vital role in various data analytics, structured machine 
-learning, and data mining applications. These relationships can be expressed as 
-graphs. GraphBuilder is a Java library for preparing graphs from large volumes of 
-unstructured and semi-structured data. 
 
-Processing large graphs in a distributed computing environment presents multiple 
-system-level challenges, from parallelizing the graph construction algorithms to 
-achieving balanced system utilization. In addition, the resultant graph must be 
-carefully partitioned to ensure that subsequent application processing is properly 
-balanced. GraphBuilder addresses these challenges with a carefully-designed 
-multi-stage pipeline that leverages the Apache Hadoop framework to achieve 
-scalability. 
+***********************************
+* Intel Graph Builder 1.0 Release *
+***********************************
 
-How to build the GraphBuilder?
+GraphBuilder is a Java library for preparing graphs from large volume of
+unstructured, semi-structured or structured data. Data relationships play a
+vital role in various data analytics and structured machine learning
+applications. These relationships can be collectively expressed as graphs. A
+graph is a collection of objects (vertices) and the relationships between them
+(edges).
+
+Processing large graphs requires distributed computing environments that impose
+challenges such as parallelization, load balancing, task distribution, fault
+tolerance and data consistency. Such challenges are equally applicable to the
+problem of large graph construction from unstructured or semi-structured data.
+In addition users need to consider parsing and feature extraction of large
+datasets, transformation of vertices and edge labels into internal (integer)
+representation and partitioning of the constructed graph at scale. Graph
+Builder address these challenges by encapsulating construction process in the
+library written in Java using Apache Hadoop framework and achieves scalability. 
+
+
+How to build the Graph Builder?
 ------------------------------
-The GraphBuilder is using Maven for building the package, ensure maven is 
+The Graph Builder is using Maven for building the package, ensure maven is 
 installed on the system. To build package type:
 $> mvn package
 
+Notes that ASM.jar library from maven does not work. Please download asm.jar and
+asm-pom into local repository yourself. And use the following command to install
+asm into your local maven repository: 
+  mvn install:install-file -Dfile=asm-3.1.jar -DgroupId=asm -DartifactId=asm \
+  -Dversion=3.1 -Dpackaging=jar -DpomFile=asm-3.1.pom
 
-How to use the GraphBuilder? 
+
+How to use the Graph Builder? 
 ----------------------------
-The GraphBuilder library can be used in multiple ways. Library groups multiple 
+The Graph Builder library can be used in multiple ways. Library groups multiple 
 MapReduce jobs in four major groups: a) GraphCreation b) ComputeNetworkInfo 
 c) GraphNormalization d) GraphPartitioning. These group can be chained to form 
 graph construction pipeline depending on an application requirements (e.g. Please 
@@ -29,8 +45,23 @@ refer construction pipeline for link and doc-word graph in demoapps dir).
 Library can be used as tool to construct link and doc-word graph for Wikipedia
 using following command:
 
-* Link graph construction - $> hadoop jar target/graphbuilder-0.0.1-SNAPSHOT-hadoop-job.jar com.intel.hadoop.graphbuilder.demoapps.wikipedia.linkgraph.LinkGraphEnd2End <# of partition> <hdfs input directory> <hdfs output directory>
-* Doc-word graph construction - $> hadoop jar target/graphbuilder-0.0.1-SNAPSHOT-hadoop-job.jar com.intel.hadoop.graphbuilder.demoapps.wikipedia.docwordgraph.TFIDFGraphEnd2End <# of partition> <hdfs input directory> <hdfs output directory> <optional stop word filter list>
+* Link graph construction -
+$> hadoop jar target/graphbuilder-1.0.0-SNAPSHOT-hadoop-job.jar \
+              com.intel.hadoop.graphbuilder.demoapps.wikipedia.linkgraph.LinkGraphEnd2End <# of partition> \
+			  <hdfs input directory> <hdfs output directory> <partitionMethod>
+
+* Doc-word graph construction -
+$> hadoop jar target/graphbuilder-1.0.0-SNAPSHOT-hadoop-job.jar \
+              com.intel.hadoop.graphbuilder.demoapps.wikipedia.docwordgraph.TFIDFGraphEnd2End <# of partition> \
+			  <hdfs input directory> <hdfs output directory> <partitionMethod> <optional enable_tfidf> \
+			  <optional stop word filter list>
+
+* The partitionMethod options are
+  0 -- Random
+  1 -- Greedy
+  2 -- ConstrainedRandom (Grid)
+  3 -- ConstrainedGreedy (Grid)
+  4 -- ConstrainedPDSRandom
 
 Sample application code
 ----------------------- 
@@ -40,7 +71,3 @@ data-specific code. Sample code for those interface can be found in demoapps
 directory. It contains code for generating link-graphs and doc-word 
 graph out of Wikipedia XML dump. Interfaces are documented, please refer
 a Javadoc in the doc directory.
-
-Contact
--------
-More information visit www.01.org/graphbuilder 

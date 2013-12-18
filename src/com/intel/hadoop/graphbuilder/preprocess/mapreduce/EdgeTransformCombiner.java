@@ -21,6 +21,8 @@ package com.intel.hadoop.graphbuilder.preprocess.mapreduce;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -33,13 +35,12 @@ import com.intel.hadoop.graphbuilder.preprocess.mapreduce.keyvalue.PairListType;
 /**
  * Combine the intermediate key value pairs.
  * 
- * 
  * @param <KeyType>
  * @param <ValType>
  */
 public class EdgeTransformCombiner<VidType extends WritableComparable<VidType>>
     extends MapReduceBase implements
-    Reducer<VidType, PairListType, VidType, PairListType> {
+    Reducer<IntWritable, Text, IntWritable, Text> {
 
   @Override
   public void configure(JobConf job) {
@@ -48,22 +49,17 @@ public class EdgeTransformCombiner<VidType extends WritableComparable<VidType>>
   }
 
   @Override
-  public void reduce(VidType key, Iterator<PairListType> values,
-      OutputCollector<VidType, PairListType> out, Reporter reporter)
+  public void reduce(IntWritable key, Iterator<Text> values,
+      OutputCollector<IntWritable, Text> out, Reporter reporter)
       throws IOException {
-    PairListType ret;
-    try {
-      ret = (PairListType) valClass.newInstance();
+    
+      Text ret = new Text();
+
       while (values.hasNext()) {
-        ret.append(values.next());
+        String old = ret.toString();
+        ret.set(old + "|" + values.next().toString());
       }
       out.collect(key, ret);
-    } catch (InstantiationException e) {
-      e.printStackTrace();
-    } catch (IllegalAccessException e) {
-      e.printStackTrace();
-    }
   }
-
   protected Class valClass;
 }

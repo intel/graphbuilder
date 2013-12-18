@@ -51,7 +51,8 @@ public class HashIdReducer extends MapReduceBase implements
   @Override
   public void configure(JobConf job) {
     super.configure(job);
-    splitsize = job.getInt("mapred.line.input.format.linespermap", 600000);
+    splitsize = job.getInt("mapred.line.input.format.linespermap", 6000000);
+    //splitsize = job.getInt("mapreduce.input.lineinputformat.linespermap", 6000000);// for YARN
     try {
       this.graphparser = (GraphParser) Class.forName(job.get("GraphParser"))
           .newInstance();

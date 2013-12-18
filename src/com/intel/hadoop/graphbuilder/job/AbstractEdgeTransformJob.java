@@ -41,7 +41,7 @@ import com.intel.hadoop.graphbuilder.util.FsUtil;
  * <p>
  * User will need to override 2 functions for type resolving: {@code vidClass()}
  * , and {@code edataClass()}. User will also need to implement their reduce and
- * apply {@code Function}s, and override {@code reduceFunction()}, and
+ * apply {@code Functiona}s, and override {@code reduceFunction()}, and
  * {@code applyFunction()}.
  * </p>
  * <p>

@@ -29,7 +29,6 @@ import com.intel.hadoop.graphbuilder.types.StringType;
  * Test runnable for normalizing a graph: converting String vertex ids into
  * consecutive integer ids.
  *
- * @author Haijie Gu
  */
 public class IdNormalizationJobTest {
   public class Job extends AbstractIdNormalizationJob {

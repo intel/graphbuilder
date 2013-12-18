@@ -22,6 +22,7 @@ import com.intel.hadoop.graphbuilder.util.HashUtil;
 
 /**
  * Random assigns a partition id for each edge.
+ * All nodes in the cluster gets equal share of edges
  * 
  * @param <VidType>
  */

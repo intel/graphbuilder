@@ -31,7 +31,6 @@ import com.intel.hadoop.graphbuilder.types.TypeFactory;
  * com.intel.hadoop.graphbuilder.test.partition.EdgeIngressTest input output 8
  * oblivious
  * 
- * @author Haijie Gu
  */
 public class EdgeIngressTest {
   public static void main(String[] args) throws Exception {
@@ -46,6 +45,6 @@ public class EdgeIngressTest {
         TypeFactory.getClassName("int"), TypeFactory.getClassName("none"),
         TypeFactory.getClassName("none"));
     mr.setKeyValueClass(keyClass, valClass);
-    mr.run(new String[] { args[0] }, args[1], Integer.valueOf(args[2]), args[3]);
+    mr.run(new String[] { args[0] }, args[1], Integer.valueOf(args[2]), Integer.valueOf(args[3]));
   }
 }

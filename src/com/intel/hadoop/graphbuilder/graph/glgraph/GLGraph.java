@@ -389,7 +389,6 @@ public class GLGraph<VidType, VertexData, EdgeData> implements
    * Given a reference ArrayList<Integer> valueList, compare two integers i,j by
    * valueList[i], and valueList[j].
    * 
-   * @author Haijie Gu
    */
   private class CompareByVid implements Comparator<Integer> {
     /**

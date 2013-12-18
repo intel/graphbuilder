@@ -29,7 +29,6 @@ import com.intel.hadoop.graphbuilder.parser.StringParser;
  * com.intel.hadoop.graphbuilder.test.idnormalize.SortDictionaryMapReduceTest
  * input output
  * 
- * @author Haijie Gu
  */
 public class SortDictionaryMapReduceTest {
   public static void main(String[] args) throws IOException {

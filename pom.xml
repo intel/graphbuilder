@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.intel.hadoop.graphbuilder</groupId>
 	<artifactId>graphbuilder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	
 	<build>
 	<sourceDirectory>src</sourceDirectory>
@@ -76,9 +76,20 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-core</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.3</version>
 			<scope>provided</scope>
 		</dependency>
+                <dependency>
+                        <groupId>it.unimi.dsi</groupId>
+                        <artifactId>fastutil</artifactId>
+                        <version>6.5.2</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase</artifactId>
+                        <version>0.94.6</version>
+                        <scope>provided</scope>
+                </dependency>
 		<dependency>
 			<groupId>net.minidev</groupId>
 			<artifactId>json-smart</artifactId>

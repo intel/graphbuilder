@@ -33,8 +33,6 @@ import com.intel.hadoop.graphbuilder.graph.Vertex;
  * also treats all string as valid edgedata and vertexdata. In other words,
  * there should not be comments in the input.
  * 
- *
- * 
  * @param <VidType>
  * @param <VertexData>
  * @param <EdgeData>

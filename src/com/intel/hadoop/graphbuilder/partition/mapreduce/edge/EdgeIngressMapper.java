@@ -39,6 +39,9 @@ import com.intel.hadoop.graphbuilder.parser.GraphParser;
 import com.intel.hadoop.graphbuilder.partition.mapreduce.keyvalue.IngressKeyType;
 import com.intel.hadoop.graphbuilder.partition.mapreduce.keyvalue.IngressValueType;
 import com.intel.hadoop.graphbuilder.partition.strategy.GreedyIngress;
+import com.intel.hadoop.graphbuilder.partition.strategy.ConstrainedGreedyIngress;
+import com.intel.hadoop.graphbuilder.partition.strategy.ConstrainedRandomIngress;
+import com.intel.hadoop.graphbuilder.partition.strategy.ConstrainedPDSRandomIngress;
 import com.intel.hadoop.graphbuilder.partition.strategy.Ingress;
 import com.intel.hadoop.graphbuilder.partition.strategy.RandomIngress;
 
@@ -90,7 +93,13 @@ public class EdgeIngressMapper<VidType extends WritableComparable<VidType>, Vert
     String ingressMethod = job.get("ingress");
     if (ingressMethod.equals("greedy")) {
       this.ingress = new GreedyIngress<VidType>(numprocs);
-    } else {
+    } else if (ingressMethod.equals("constrainedgreedy")) {
+      this.ingress = new ConstrainedGreedyIngress<VidType>(numprocs);
+    } else if (ingressMethod.equals("constrainedrandom")) {
+      this.ingress = new ConstrainedRandomIngress<VidType>(numprocs);
+    } else if (ingressMethod.equals("constrainedpdsrandom")) {
+      this.ingress = new ConstrainedPDSRandomIngress<VidType>(numprocs);   
+    } else if (ingressMethod.equals("random")) {
       this.ingress = new RandomIngress<VidType>(numprocs);
     }
 
@@ -149,18 +158,23 @@ public class EdgeIngressMapper<VidType extends WritableComparable<VidType>, Vert
       // overpartition edges and assign its quasi pid.
       Random r = new Random();
       short qid = (short) (overpartition * pid + r.nextInt(overpartition));
+      LOG.error(mapKey.toString() + mapValue.toString());
       mapKey.set(qid, null, IngressKeyType.EDGEKEY);
       mapValue.initEdgeValue(qid, e.source(), e.target(), e.EdgeData());
       out.collect(mapKey, mapValue);
 
       // output source vertex record
-      mapKey.set(pid, e.source(), IngressKeyType.VERTEXKEY);
-      mapValue.initVrecValue(e.source(), pid, 0, 1);
+      //mapKey.set(pid, e.source(), IngressKeyType.VERTEXKEY);
+      //mapValue.initVrecValue(e.source(), pid, 0, 1);
+      mapKey.set(qid, e.source(), IngressKeyType.VERTEXKEY);
+      mapValue.initVrecValue(e.source(), qid, 0, 1);
       out.collect(mapKey, mapValue);
 
       // output target vertex record
-      mapKey.set(pid, e.target(), IngressKeyType.VERTEXKEY);
-      mapValue.initVrecValue(e.target(), pid, 1, 0);
+      //mapKey.set(pid, e.target(), IngressKeyType.VERTEXKEY);
+      //mapValue.initVrecValue(e.target(), pid, 1, 0);
+      mapKey.set(qid, e.target(), IngressKeyType.VERTEXKEY);
+      mapValue.initVrecValue(e.target(), qid, 1, 0);
       out.collect(mapKey, mapValue);
 
     } catch (Exception e1) {

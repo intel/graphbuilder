@@ -1,0 +1,95 @@
+body {
+    text-align: center;
+}
+#instrument_panel {
+    text-align: center;
+}
+
+.metric_summary {
+    display: inline-block;
+    
+}
+
+.metric_summary .name {
+    display: none;
+    text-align: center;
+}
+
+.metric_summary .value {
+    display: none;
+    text-align: center;
+}
+
+
+.aggregate {
+    display: inline-block;
+}
+
+.aggregate .chart {
+   width: 400px;
+   height: 200px;
+}
+
+.aggregate .name {
+  display: none
+}
+
+
+.aggregate .chart {
+   width: 400px;
+   height: 200px;
+}
+
+.node {
+    display: inline-block;
+}
+
+
+.node .name {
+  display: none
+}
+
+
+.node .chart {
+   width: 400px;
+   height: 200px;
+}
+
+
+.graph_builder {
+    display: inline-block;
+}
+
+.graph_builder .chart {
+   width: 400px;
+   height: 200px;
+}
+
+.graph_builder .name {
+  display: none
+}
+
+
+.graph_builder .chart {
+   width: 400px;
+   height: 200px;
+}
+
+#graph_builder_phase_name {
+   margin-top: 20px;
+   background: #2C9735;
+   margin-left: auto;
+   margin-right: auto;
+   width: 20%;
+   color: #FFF;
+}
+
+#graph_builder_progress {
+   margin-top: 10px;
+   background: #FFF;
+   color: #2C9735;
+   margin-left: auto;
+   margin-right: auto;
+   width: 75%;
+   height: 20px;
+}

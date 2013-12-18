@@ -30,8 +30,6 @@ import com.intel.hadoop.graphbuilder.graph.glgraph.SparseGraphStruct;
 /**
  * Unit test for SparseGraphStructs.
  *
- * @author Haijie Gu
- *
  */
 public class SparseGraphStructTest {
 

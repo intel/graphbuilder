@@ -70,10 +70,19 @@ public class WordCountGraphTokenizer implements
       e1.printStackTrace();
     }
 
-    String path = job.get("Dictionary");
-    if (path != null) {
+    String dictPath = job.get("Dictionary");
+    if (dictPath != null && dictPath != "") {
       try {
-        loadDictionary(path);
+        loadDictionary(dictPath);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
+    String stopWordsPath = job.get("StopWords");
+    if (stopWordsPath != null && stopWordsPath != "") {
+      try {
+        loadStopWords(stopWordsPath);
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -105,28 +114,43 @@ public class WordCountGraphTokenizer implements
       Document doc = builder.parse(new InputSource(new StringReader(s)));
       XPathFactory xfactory = XPathFactory.newInstance();
       XPath xpath = xfactory.newXPath();
-      title = xpath.evaluate("//page/title/text()", doc);
-      title = title.replaceAll("\\s", "_");
+      String input_title = xpath.evaluate("//page/title/text()", doc);
+      input_title = input_title.replaceAll("\\s", "_");
       // title = title.replaceAll("^[^a-zA-Z0-9]", "#");
       // title = title.replaceAll("[^a-zA-Z0-9.]", "_");
-      id = xpath.evaluate("//page/id/text()", doc);
-      String text = xpath.evaluate("//page/revision/text/text()", doc);
-
-      if (!text.isEmpty()) {
-        Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
-        TokenStream stream = analyzer.tokenStream(null, new StringReader(text));
-        while (stream.incrementToken()) {
-          String token = stream.getAttribute(TermAttribute.class).term();
-
-          if (dictionary != null && !dictionary.contains(token))
-            continue;
-
-          if (counts.containsKey(token))
-            counts.put(token, counts.get(token) + 1);
-          else
-            counts.put(token, 1);
+     if(!( input_title.startsWith("Wikipedia:") ||
+           input_title.startsWith("Help:") ||
+	  	     input_title.startsWith("Category:") ||
+	         input_title.startsWith("Template:") ||
+	         input_title.startsWith("MediaWiki:") ||
+	         input_title.startsWith("Book:") ||
+	         input_title.startsWith("Portal:") ||
+	         input_title.startsWith("File:") ||
+	         input_title.startsWith("List_of_") ) || 
+	         input_title.startsWith("List_of_Intel_")){
+	        title = input_title;
+          id = xpath.evaluate("//page/id/text()", doc);
+          String text = xpath.evaluate("//page/revision/text/text()", doc);
+    
+          if (!text.isEmpty()) {
+            Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
+            TokenStream stream = analyzer.tokenStream(null, new StringReader(text));
+            while (stream.incrementToken()) {
+              String token = stream.getAttribute(TermAttribute.class).term().toLowerCase();
+    
+              if (dictionary != null && !dictionary.contains(token))
+                continue;
+    
+                   if (stopWordsList != null && stopWordsList.contains(token))
+                        continue;
+    
+              if (counts.containsKey(token))
+                counts.put(token, counts.get(token) + 1);
+              else
+                counts.put(token, 1);
+            }
+          }
         }
-      }
     } catch (ParserConfigurationException e) {
       e.printStackTrace();
     } catch (SAXException e) {
@@ -140,15 +164,18 @@ public class WordCountGraphTokenizer implements
 
   @Override
   public Iterator<Vertex<StringType, StringType>> getVertices() {
-    ArrayList<Vertex<StringType, StringType>> vlist = new ArrayList<Vertex<StringType, StringType>>(
+    if (counts.isEmpty())
+      return EmptyIterator.INSTANCE;
+	
+      ArrayList<Vertex<StringType, StringType>> vlist = new ArrayList<Vertex<StringType, StringType>>(
         counts.size() + 1);
-    vlist.add(new Vertex<StringType, StringType>(new StringType(id),
-        new StringType(title)));
-    Iterator<String> iter = counts.keySet().iterator();
-    while (iter.hasNext()) {
-      vlist.add(new Vertex<StringType, StringType>(new StringType(iter.next()),
-          new StringType()));
-    }
+          vlist.add(new Vertex<StringType, StringType>(new StringType(doc+title),
+              new StringType()));
+          Iterator<String> iter = counts.keySet().iterator();
+          while (iter.hasNext()) {
+            vlist.add(new Vertex<StringType, StringType>(new StringType(word+iter.next()),
+                new StringType()));
+          }
     return vlist.iterator();
   }
 
@@ -162,8 +189,8 @@ public class WordCountGraphTokenizer implements
     Iterator<Entry<String, Integer>> iter = counts.entrySet().iterator();
     while (iter.hasNext()) {
       Entry<String, Integer> e = iter.next();
-      elist.add(new Edge<StringType, StringType>(new StringType(id),
-          new StringType(e.getKey()), new StringType(e.getValue().toString())));
+      elist.add(new Edge<StringType, StringType>(new StringType(doc+title),
+          new StringType(word+e.getKey()), new StringType(e.getValue().toString())));
     }
     return elist.iterator();
   }
@@ -182,10 +209,26 @@ public class WordCountGraphTokenizer implements
     }
   }
 
+  private void loadStopWords(String path) throws IOException {
+    FileStatus[] stats = fs.listStatus(new Path(path));
+    stopWordsList = new HashSet<String>();
+    for (FileStatus stat : stats) {
+      LOG.debug(("Load stop words: " + stat.getPath().getName()));
+      Scanner sc = new Scanner(new BufferedReader(new InputStreamReader(
+          fs.open(stat.getPath()))));
+      while (sc.hasNextLine()) {
+        String line = sc.nextLine();
+        stopWordsList.add(line);
+      }
+    }
+  }
+
   private String title;
   private String id;
+  private char doc ='0';
+  private char word ='1';
   private HashMap<String, Integer> counts;
   private FileSystem fs;
   private HashSet<String> dictionary;
-
+  private HashSet<String> stopWordsList;
 }
