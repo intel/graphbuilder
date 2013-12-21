@@ -1,0 +1,107 @@
+/*! \mainpage 
+ *
+ * <H2>Overview</H2>
+ * Intel Graph Builder (alpha) 2.0 is a library of user defined functions
+ * (UDF's) and macros in <a href="http://pig.apache.org/">Apache Pig</a> to construct graphs in Hadoop(TM). The 2
+ * .0 (alpha) version supports multi-relational graphs, or property graphs, in which both objects
+ * and relationships may be labeled with multiple properties and property values.
+ * Graphs can be constructed from structured, semi-structured,
+ * or unstructured data. In case of structured data, columns of HBase tables or
+ * fields in CSV/TSV files for example can be annotated as objects,
+ * relationships, or their properties. To do the same from complex XML and JSON documents we
+ * have improved the memory footprint of Piggy Bank's XMLLoader function, and we have provided ExtractJSONField UDF to extract fields
+ * from JSON documents with JSONPath queries. In addition, we have provided a RegexExtractAllMatches utility
+ * to extract all text matches from a given string.
+
+ * Once a graph is constructed the deduplication macro can be used to merge
+ * duplicate elements. These capabilities can be easily extended with
+ * your custom user defined functions.
+
+ * Of course, there’s no point in building a graph if it can’t be queried,
+ * analyzed or visualized. So, we have introduced new bulk load and export
+ * methods. The LOAD_TITAN macro bulk loads the open source Titan distributed
+ * graph database via the Blueprints API so that graphs can be explored
+ * using the Gremlin query language. In addition, we have extended Graph Builder
+ * to support the Resource Description Framework (<a href="http://www.w3.org/RDF/">RDF</a>) format. RDF
+ * triples for property graph elements are formed using Apache Jena library.
+ * We only export graphs in the N-TRIPLES format. All the Jena RDF
+ * namespaces are accepted. Last but not least this version of the Graph
+ * Builder library can also export simple edge (relationship) lists and vertex
+ * (object) lists. Graph visualization tools such as Gephi can be used with
+ * the edge list exports.
+
+ * <H2>Release Notes</H2>
+ * - Added the \link com.intel.hadoop.graphbuilder.sampleapplications.TableToGraphDB TableToGraphDB \endlink MapReduce application to bulk load property graphs
+ *   from HBase tables to the open source Titan graph database.
+ * - Removed ID normalization and partitioning.
+ * - Removed the demoapps and provided several sample pig scripts under the examples directory
+ * - Added several UDFs for graph ETL and a macro for bulk loading the <a href="http://thinkaurelius.github.io/titan/">Titan graph database:</a>
+	 * - <B>Raw Data Input</B> 
+	 *      <UL>
+	 *		<LI> \link com.intel.pig.udf.eval.ExtractJSONField ExtractJSONField \endlink Provides a convenient way of processing complex JSON documents using <a href="https://code.google.com/p/rest-assured/">JSONPath</a> queries.
+	 *      <LI> \link com.intel.pig.load.XMLLoader XMLLoader \endlink Provides a fix for reducing the memory footprint of <a href="https://cwiki.apache.org/confluence/display/PIG/PiggyBank">Piggy Bank</a>'s XMLLoader.
+	 *      <LI> \link com.intel.pig.udf.eval.RegexExtractAllMatches RegexExtractAllMatches \endlink Extracts all strings from a string source that match a regular expression.	 
+	 *      </UL>
+	 * - <B>Graph Construction</B> 
+	 *      <UL>
+	 *	    <LI> \link com.intel.pig.udf.eval.CreatePropGraphElements CreatePropGraphElements \endlink Creates \link com.intel.pig.data.PropertyGraphElement PropertyGraphElements \endlink 
+	 *       from raw input given vertex and edge tokenization rules. 
+	 *	    <LI> \link graphbuilder.pig MERGE_DUPLICATE_ELEMENTS \endlink Combine duplicate property graph elements into a single property graph element. Also
+	 *      see \link com.intel.pig.udf.eval.MergeDuplicateGraphElements MergeDuplicateGraphElements \endlink
+	 *      </UL>  
+	 * - <B>Graph Export</B> 
+	 *      <UL> 
+	 *	    <LI> \link com.intel.pig.udf.eval.RDF RDF \endlink Creates RDF triples from property graph elements.
+	 *      <LI> \link com.intel.pig.udf.eval.EdgeList EdgeList \endlink Creates an edge list representation from a property graph element.  
+	 *      <LI> \link com.intel.pig.udf.eval.VertexList VertexList \endlink Creates vertex list representation from a property graph element. 
+	 * - <B>Graph Bulk Loading</B> 
+	 *	 	<UL> 
+	 *      <LI> \link graphbuilder.pig LOAD_TITAN \endlink Loads a graph from a given HBase table to the Titan graph database.
+	 *      </UL> 
+	 * - <B>Miscellaneous</B>
+	 *      <UL>  
+	 *      <LI>  \link com.intel.pig.udf.eval.CreateRowKey CreateRowKey \endlink Generates a row key that 
+	 *      <a href="http://pig.apache.org/docs/r0.12.0/api/org/apache/pig/backend/hadoop/hbase/HBaseStorage.html">HBaseStorage</a> 
+	 *      class needs when storing data to an HBase table by applying the MD5 hash function to a given tuple's elements.
+	 *      </UL> 
+ * 
+ * <H2>Prerequisites</H2>
+ * GB 2.0 (alpha) requires <a href="http://hadoop.apache.org/">Apache Hadoop</a> and <a href="http://pig.apache.org/">Apache Pig</a> installed. 
+ * To use the \link graphbuilder.pig LOAD_TITAN \endlink macro for bulk loading graphs to Titan, 
+ * <a href="http://hbase.apache.org/">HBase</a> and <a href="http://thinkaurelius.github.io/titan/">Titan graph database</a> are also required. 
+ * In particular, GB 2.0 (alpha) has been tested against Java 1.7, Hadoop 1.2.1, Pig 0.12, Hbase 0.94.12, and Titan 0.4.1. 
+  
+ * <H2>Building The Source Code</H2>
+ * GB 2.0 (alpha) uses <a href="http://maven.apache.org/">Apache Maven</a> as the build manager. You can build GB with
+ \code
+ mvn clean package 
+ \endcode
+ * and graphbuilder-2.0-alpha-with-deps.jar will be created under the target directory. In order to skip unit tests during the build
+ \code
+ mvn clean package -DskipTests 
+ \endcode
+
+ * <H2>Running the Examples</H2>
+ * Assuming GB 2.0 (alpha) is installed at /usr/local/gb/, you can run the provided example scripts with
+    \code
+     export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:/usr/local/gb/target/graphbuilder-2.0-alpha-with-deps.jar
+     cd /usr/local/gb/
+     pig -x local -f examples/rdf_example.pig     
+    \endcode
+    
+ * <H2>Using GB 2.0 (alpha)</H2>
+ *  To use GB 2.0 (alpha) UDFs, in your Pig script REGISTER graphbuilder-2.0-alpha-with-deps.jar and IMPORT \link graphbuilder.pig \endlink script. The 
+ * \link graphbuilder.pig \endlink script defines the ExtractJSONField and CreateRowKey UDFs (the UDFs that take no constructor arguments), and LOAD_TITAN and MERGEDUPLICATEGRAPHELEMENTS macros. The user
+ * has to define the other UDFs with the constructor arguments they want; please see examples under the examples/ directory for the use of GB functionality in your Pig scripts.
+ *  Assuming GB 2.0 (alpha) is installed at /usr/local/gb/ add the following to the beginning of your Pig script:
+    \code
+     REGISTER /usr/local/gb/target/graphbuilder-2.0-alpha-with-deps.jar;
+     IMPORT '/usr/local/gb/pig/graphbuilder.pig';
+    \endcode
+ * 
+ * <H2>Known Issues:</H2>
+ *  <B>ERROR org.apache.pig.tools.grunt.Grunt - ERROR 2998: Unhandled internal error. java.io.IOException: 
+ *  Could not find class com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids, while attempting to de-serialize it</B><BR/>
+ *  Make sure you do not overwrite HADOOP_CLASSPATH variable in $HADOOP_HOME/conf/hadoop-env.sh and in other places.
+ * 
+ */
