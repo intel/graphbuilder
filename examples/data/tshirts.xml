@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tshirts>
+	<tshirt>
+		<Name>T-Shirt 1</Name>
+		<Sizes>
+			<element>
+				<Price>20.5</Price>
+				<Size>Large</Size>
+			</element>
+			<element>
+				<Price>10.0</Price>
+				<Size>Medium</Size>
+			</element>
+		</Sizes>
+		<Colors>
+			<element>Red</element>
+			<element>Green</element>
+			<element>Blue</element>
+		</Colors>
+	</tshirt>
+	<tshirt>
+		<Name>T-Shirt 2</Name>
+		<Sizes>
+			<element>
+				<Price>20..</Price>
+				<Size>Large</Size>
+			</element>
+			<element>
+				<Price>11.0</Price>
+				<Size>Medium</Size>
+			</element>
+			<element>
+				<Price>5.0</Price>
+				<Size>Small</Size>
+			</element>
+		</Sizes>
+		<Colors>
+			<element>Black</element>
+			<element>White</element>
+		</Colors>
+	</tshirt>
+	<tshirt>
+		<Name>T-Shirt 3</Name>
+		<Sizes>
+			<element>
+				<Price>40.0</Price>
+				<Size>X-Large</Size>
+			</element>
+			<element>
+				<Price>9.99</Price>
+				<Size>Small</Size>
+			</element>
+		</Sizes>
+		<Colors>
+			<element>Gray</element>
+			<element>Magenta</element>
+		</Colors>
+	</tshirt>
+	<tshirt>
+		<Name>T-Shirt 4</Name>
+		<Sizes>
+			<element>
+				<Price>44.99</Price>
+				<Size>Large</Size>
+			</element>
+			<element>
+				<Price>10.99</Price>
+				<Size>Small</Size>
+			</element>
+		</Sizes>
+		<Colors>
+			<element>Lime</element>
+			<element>Maroon</element>
+		</Colors>
+	</tshirt>
+	<tshirt>
+		<Name>T-Shirt 5</Name>
+		<Sizes>
+			<element>
+				<Price>99.99</Price>
+				<Size>XX-Large</Size>
+			</element>
+			<element>
+				<Price>22.0</Price>
+				<Size>Medium</Size>
+			</element>
+			<element>
+				<Price>12.99</Price>
+				<Size>Small</Size>
+			</element>
+		</Sizes>
+		<Colors>
+			<element>Purple</element>
+		</Colors>
+	</tshirt>
+</tshirts>

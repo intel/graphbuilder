@@ -1,0 +1,5 @@
+{ "Name": "T-Shirt 1", "Sizes": [ { "Size": "Large", "Price": 20.50 }, { "Size": "Medium", "Price": 10.00 } ], "Colors": [ "Red", "Green", "Blue" ]}
+{ "Name": "T-Shirt 2", "Sizes": [ { "Size": "Large", "Price": 20.00 }, { "Size": "Medium", "Price": 11.00 }, { "Size": "Small", "Price": 5.00 } ], "Colors": [ "Black", "White" ]}
+{ "Name": "T-Shirt 3", "Sizes": [ { "Size": "X-Large", "Price": 40.00 }, { "Size": "Small", "Price": 9.99 } ], "Colors": [ "Gray", "Magenta" ]}
+{ "Name": "T-Shirt 4", "Sizes": [ { "Size": "Large", "Price": 44.99 }, { "Size": "Small", "Price": 10.99 } ], "Colors": [ "Lime", "Maroon" ]}
+{ "Name": "T-Shirt 5", "Sizes": [ { "Size": "XX-Large", "Price": 99.99 }, { "Size": "Medium", "Price": 22.00 }, { "Size": "Small", "Price": 12.99 } ], "Colors": [ "Purple" ]}
