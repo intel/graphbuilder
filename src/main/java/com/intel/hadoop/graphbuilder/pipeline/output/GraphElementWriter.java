@@ -39,6 +39,10 @@ import java.util.Hashtable;
  * @see com.intel.hadoop.graphbuilder.pipeline.output.titan.TitanGraphElementWriter
  */
 public abstract class GraphElementWriter {
+
+    public static final String PROPERTY_KEY_SRC_TITAN_ID = "srcTitanID";
+    public static final String PROPERTY_KEY_TGT_TITAN_ID = "tgtTitanID";
+
     protected Hashtable<EdgeID, Writable> edgeSet;
     protected Hashtable<Object, Writable> vertexSet;
     protected Hashtable<Object, StringType> vertexLabelMap;

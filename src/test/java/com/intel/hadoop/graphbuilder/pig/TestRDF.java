@@ -81,7 +81,7 @@ public class TestRDF {
 	    				"RDF statement mismatch",
 		    			rdfStatement,
 			    		"http://www.w3.org/2002/07/owl#test_vertex " +
-                        "http://www.w3.org/2002/07/owl#p-1 v-1 .");
+                        "http://www.w3.org/2002/07/owl#p-1 \"v-1\" .");
             }
 		}
 

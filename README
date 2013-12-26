@@ -131,3 +131,8 @@ For the HBase configuration, we recommend tuning the following parameters:
 - hbase.regionserver.handler.count
 - hbase.rpc.timeout
 - hbase.client.write.buffer
+
+Dependencies
+------------
+
+Please use Titan version 0.4.1 to execute Gremlin queries.

@@ -56,12 +56,15 @@ import org.apache.log4j.Logger;
  *  We expect that the mapper will set the keys so that the edges are gathered 
  *  with the source vertices during the shuffle.
  * </p>
- * @see com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.keyfunction.SourceVertexKeyFunction
+ * @see com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.keyfunction
+ * .SourceVertexKeyFunction
  */
 
-public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGraphElement, IntWritable, SerializedGraphElement> {
+public class VerticesIntoTitanReducer extends Reducer<IntWritable,
+        SerializedGraphElement, IntWritable, SerializedGraphElement> {
 
-    private static final Logger LOG = Logger.getLogger(VerticesIntoTitanReducer.class);
+    private static final Logger LOG = Logger.getLogger
+            (VerticesIntoTitanReducer.class);
 
     private boolean    noBiDir;
     private Functional edgeReducerFunction;
@@ -93,9 +96,11 @@ public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGra
      * @return {@code TitanGraph}  For saving edges.
      * @throws IOException
      */
-    private TitanGraph getTitanGraphInstance (Context context) throws IOException {
+    private TitanGraph getTitanGraphInstance (Context context) throws
+            IOException {
         BaseConfiguration titanConfig = new BaseConfiguration();
-        return GraphDatabaseConnector.open("titan", titanConfig, context.getConfiguration());
+        return GraphDatabaseConnector.open("titan", titanConfig,
+                context.getConfiguration());
     }
 
     /**
@@ -105,7 +110,8 @@ public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGra
      * @throws InterruptedException
      */
     @Override
-    public void setup(Context context)  throws IOException, InterruptedException {
+    public void setup(Context context)  throws IOException,
+            InterruptedException {
 
         Configuration conf = context.getConfiguration();
 
@@ -115,12 +121,15 @@ public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGra
         try {
             outValue   = (SerializedGraphElement) outClass.newInstance();
         } catch (InstantiationException e) {
-            GraphBuilderExit.graphbuilderFatalExitException(StatusCode.CLASS_INSTANTIATION_ERROR,
-                    "GRAPHBUILDER_ERROR: Cannot instantiate new reducer output value ( " + outClass.getName() + ")", LOG, e);
+            GraphBuilderExit.graphbuilderFatalExitException(StatusCode
+                    .CLASS_INSTANTIATION_ERROR, "GRAPHBUILDER_ERROR: Cannot " +
+                    "instantiate new reducer output value ( " + outClass
+                    .getName() + ")", LOG, e);
         } catch (IllegalAccessException e) {
-            GraphBuilderExit.graphbuilderFatalExitException(StatusCode.CLASS_INSTANTIATION_ERROR,
-                    "GRAPHBUILDER_ERROR: Illegal access exception when instantiating reducer output value ( " + outClass.getName() + ")",
-                    LOG, e);
+            GraphBuilderExit.graphbuilderFatalExitException(StatusCode
+                    .CLASS_INSTANTIATION_ERROR, "GRAPHBUILDER_ERROR: Illegal " +
+                    "access exception when instantiating reducer output value" +
+                    " ( " + outClass.getName() + ")", LOG, e);
         }
 
 
@@ -134,37 +143,44 @@ public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGra
         try {
             if (conf.get("edgeReducerFunction") != null) {
                 this.edgeReducerFunction =
-                        (Functional) Class.forName(conf.get("edgeReducerFunction")).newInstance();
+                        (Functional) Class.forName(conf.get
+                                ("edgeReducerFunction")).newInstance();
 
                 this.edgeReducerFunction.configure(conf);
             }
 
             if (conf.get("vertexReducerFunction") != null) {
                 this.vertexReducerFunction =
-                        (Functional) Class.forName(conf.get("vertexReducerFunction")).newInstance();
+                        (Functional) Class.forName(conf.get
+                                ("vertexReducerFunction")).newInstance();
 
                 this.vertexReducerFunction.configure(conf);
             }
         } catch (InstantiationException e) {
-            GraphBuilderExit.graphbuilderFatalExitException(StatusCode.CLASS_INSTANTIATION_ERROR,
-                    "Could not instantiate reducer functions", LOG, e);
+            GraphBuilderExit.graphbuilderFatalExitException(StatusCode
+                    .CLASS_INSTANTIATION_ERROR, "Could not instantiate " +
+                    "reducer functions", LOG, e);
         } catch (IllegalAccessException e) {
-            GraphBuilderExit.graphbuilderFatalExitException(StatusCode.CLASS_INSTANTIATION_ERROR,
-                    "Illegal access exception when instantiating reducer functions", LOG, e);
+            GraphBuilderExit.graphbuilderFatalExitException(StatusCode
+                    .CLASS_INSTANTIATION_ERROR, "Illegal access exception " +
+                    "when instantiating reducer functions", LOG, e);
         } catch (ClassNotFoundException e) {
-            GraphBuilderExit.graphbuilderFatalExitException(StatusCode.CLASS_INSTANTIATION_ERROR,
-                    "Class not found exception when instantiating reducer functions", LOG, e);
+            GraphBuilderExit.graphbuilderFatalExitException(StatusCode
+                    .CLASS_INSTANTIATION_ERROR, "Class not found exception " +
+                    "when instantiating reducer functions", LOG, e);
         } catch (Functional.FunctionalConfigurationError e) {
-            GraphBuilderExit.graphbuilderFatalExitException(StatusCode.CLASS_INSTANTIATION_ERROR,
-                    "Functional error configuring reducer function", LOG, e);
+            GraphBuilderExit.graphbuilderFatalExitException(StatusCode
+                    .CLASS_INSTANTIATION_ERROR, "Functional error configuring" +
+                    " reducer function", LOG, e);
         }
 
         initMergerWriter(context);
     }
 
     /**
-     * The main reducer routine. Performs duplicate removal followed by vertex load, then a propagation of
-     * vertex IDs to the edges whose source is the current vertex.
+     * The main reducer routine. Performs duplicate removal followed by
+     * vertex load, then a propagation of * vertex IDs to the edges whose
+     * source is the current vertex.
      *
      * @param {@code key}
      * @param {@code values}
@@ -173,8 +189,8 @@ public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGra
      * @throws InterruptedException
      */
     @Override
-    public void reduce(IntWritable key, Iterable<SerializedGraphElement> values, Context context)
-            throws IOException, InterruptedException {
+    public void reduce(IntWritable key, Iterable<SerializedGraphElement>
+            values, Context context) throws IOException, InterruptedException {
 
         edgeSet       = new Hashtable<>();
         vertexSet     = new Hashtable<>();
@@ -186,8 +202,9 @@ public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGra
                 continue;
             }
 
-            //Tries to add the graph element to the existing set of vertices or edges.
-            //GraphElementMerge will take care of switching between edge and vertex.
+            // Tries to add the graph element to the existing set of vertices
+            // or edges. GraphElementMerge will take care of switching
+            // between edge and vertex.
             merge(edgeSet, vertexSet, graphElement);
         }
 
@@ -201,38 +218,48 @@ public class VerticesIntoTitanReducer extends Reducer<IntWritable, SerializedGra
      * @throws InterruptedException
      */
     @Override
-    public void cleanup(Context context) throws IOException, InterruptedException {
+    public void cleanup(Context context) throws IOException,
+            InterruptedException {
         this.graph.shutdown();
     }
 
     /**
      * Removes duplicate edges and vertices and merges their property maps.
      *
-     * @param {@code graphElement}  The graph element to add to our existing vertexSet or edgeSet.
+     * @param {@code graphElement}  The graph element to add to our existing
+     * vertexSet or edgeSet.
      */
-    private void merge(Hashtable<EdgeID, Writable> edgeSet, Hashtable<Object, Writable> vertexSet,
-                       GraphElement graphElement){
+    private void merge(Hashtable<EdgeID, Writable> edgeSet, Hashtable<Object,
+            Writable> vertexSet, GraphElement graphElement) {
         graphElement.typeCallback(graphElementMerge,
-                ArgumentBuilder.newArguments().with("edgeSet", edgeSet).with("vertexSet", vertexSet)
+                ArgumentBuilder.newArguments().with("edgeSet", edgeSet)
+                        .with("vertexSet", vertexSet)
                         .with("edgeReducerFunction", edgeReducerFunction)
                         .with("vertexReducerFunction", vertexReducerFunction)
                         .with("noBiDir", noBiDir));
     }
 
     /**
-     * Calls the {@code GraphElementWriter} function the class was initiated with 
-	 * to write the edges and vertices.
+     * Calls the {@code GraphElementWriter} function the class was initiated
+     * with  * to write the edges and vertices.
      *
      * @throws IOException
      * @throws InterruptedException
      */
-    public void write( Hashtable<EdgeID, Writable> edgeSet, Hashtable<Object, Writable> vertexSet, Context context) throws
-            IOException, InterruptedException {
+    public void write( Hashtable<EdgeID, Writable> edgeSet, Hashtable<Object,
+            Writable> vertexSet, Context context) throws IOException,
+            InterruptedException {
 
-        titanWriter.write(ArgumentBuilder.newArguments().with("edgeSet", edgeSet)
-                .with("vertexSet", vertexSet).with("vertexCounter", Counters.NUM_VERTICES)
-                .with("edgeCounter", Counters.NUM_EDGES).with("context", context)
-                .with("graph", graph).with("outValue", outValue).with("outKey", outKey).with("keyFunction", keyFunction));
+        titanWriter.write(ArgumentBuilder.newArguments()
+                .with("edgeSet", edgeSet)
+                .with("vertexSet", vertexSet)
+                .with("vertexCounter", Counters.NUM_VERTICES)
+                .with("edgeCounter", Counters.NUM_EDGES)
+                .with("context", context)
+                .with("graph", graph)
+                .with("outValue", outValue)
+                .with("outKey", outKey)
+                .with("keyFunction", keyFunction));
     }
 
     private void initMergerWriter(Context context){

@@ -167,17 +167,21 @@ public class TitanGraphElementWriter extends GraphElementWriter {
         return propertyMap;
     }
 
-    private PropertyMap addTitanIdVertex(long vertexId, PropertyMap propertyMap){
+    private PropertyMap addTitanIdVertex(long vertexId,
+                                         PropertyMap propertyMap) {
         propertyMap.setProperty("TitanID", new LongType(vertexId));
         return propertyMap;
     }
 
-    private PropertyMap addTitanIdEdge(long srcTitanId, PropertyMap propertyMap){
-        propertyMap.setProperty("srcTitanID", new LongType(srcTitanId));
+    private PropertyMap addTitanIdEdge(long srcTitanId,
+                                       PropertyMap propertyMap) {
+        propertyMap.setProperty(GraphElementWriter.PROPERTY_KEY_SRC_TITAN_ID,
+                new LongType(srcTitanId));
         return propertyMap;
     }
 
-    private PropertyMap writeEdgeProperties(long srcTitanId, Map.Entry<EdgeID, Writable> edge){
+    private PropertyMap writeEdgeProperties(long srcTitanId,
+                                            Map.Entry<EdgeID, Writable> edge) {
 
         PropertyMap propertyMap = (PropertyMap) edge.getValue();
 

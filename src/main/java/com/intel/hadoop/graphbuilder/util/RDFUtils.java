@@ -91,8 +91,9 @@ public class RDFUtils {
         for (Writable property : vertexPropMap.getPropertyKeys()) {
             Property vertexRDFProperty =
                     model.getProperty(namespace + property.toString());
-            Literal propertyValue = model.createLiteral(
-                    vertexPropMap.getProperty(property.toString()).toString());
+            Literal propertyValue = model.createLiteral('\"' +
+                    vertexPropMap.getProperty(property.toString()).toString() +
+                    '\"');
             vertexRdf.addLiteral(vertexRDFProperty, propertyValue);
         }
 

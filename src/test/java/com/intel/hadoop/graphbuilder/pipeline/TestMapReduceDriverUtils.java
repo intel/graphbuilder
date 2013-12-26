@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.intel.hadoop.graphbuilder.pipeline.output.titan.IntermediateEdgeWriterReducer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
@@ -68,7 +69,6 @@ import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringT
 import com.intel.hadoop.graphbuilder.graphelements.Vertex;
 import com.intel.hadoop.graphbuilder.pipeline.input.BaseMapper;
 import com.intel.hadoop.graphbuilder.pipeline.input.hbase.HBaseReaderMapper;
-import com.intel.hadoop.graphbuilder.pipeline.output.titan.EdgesIntoTitanReducer;
 import com.intel.hadoop.graphbuilder.pipeline.output.titan.TitanGraphElementWriter;
 import com.intel.hadoop.graphbuilder.pipeline.output.titan.VerticesIntoTitanReducer;
 import com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.keyfunction.SourceVertexKeyFunction;
@@ -90,7 +90,7 @@ import com.thinkaurelius.titan.graphdb.vertices.StandardVertex;
  * @see GBMapReduceDriver
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({EdgesIntoTitanReducer.class, VerticesIntoTitanReducer.class, HBaseReaderMapper.class, TitanGraphElementWriter.class})
+@PrepareForTest({IntermediateEdgeWriterReducer.class, VerticesIntoTitanReducer.class, HBaseReaderMapper.class, TitanGraphElementWriter.class})
 public abstract class TestMapReduceDriverUtils {
 
     protected Configuration conf;
@@ -104,7 +104,7 @@ public abstract class TestMapReduceDriverUtils {
     protected VerticesIntoTitanReducer spiedVerticesIntoTitanReducer;
     protected ReduceDriver<IntWritable, SerializedGraphElement, IntWritable, SerializedGraphElement> verticesReduceDriver;
 
-    protected EdgesIntoTitanReducer spiedEdgesIntoTitanReducer;
+    protected IntermediateEdgeWriterReducer spiedIntermediateEdgeWriterReducer;
     protected ReduceDriver<IntWritable, SerializedGraphElement, IntWritable, SerializedGraphElement> edgesReduceDriver;
 
     protected GBMapReduceDriver<ImmutableBytesWritable, Result, IntWritable, SerializedGraphElement, IntWritable, SerializedGraphElement> gbVertexMapReduceDriver;
@@ -152,7 +152,7 @@ public abstract class TestMapReduceDriverUtils {
         spiedVerticesIntoTitanReducer = null;
         verticesReduceDriver = null;
 
-        spiedEdgesIntoTitanReducer = null;
+        spiedIntermediateEdgeWriterReducer = null;
         edgesReduceDriver = null;
 
         gbEdgeMapReduceDriver = null;
@@ -173,21 +173,21 @@ public abstract class TestMapReduceDriverUtils {
     }
 
     /**
-     * create a spied instance of EdgesIntoTitanReducer to be used by the EdgesIntoTitanReducer driver
+     * create a spied instance of IntermediateEdgeWriterReducer to be used by the IntermediateEdgeWriterReducer driver
      *
-     * @see EdgesIntoTitanReducer
+     * @see com.intel.hadoop.graphbuilder.pipeline.output.titan.IntermediateEdgeWriterReducer
      *
-     * @return a new spied EdgesIntoTitanReducer
+     * @return a new spied IntermediateEdgeWriterReducer
      */
-    protected EdgesIntoTitanReducer newEdgesIntoTitanReducer(){
-        spiedEdgesIntoTitanReducer = (EdgesIntoTitanReducer) newSpy(spiedEdgesIntoTitanReducer, EdgesIntoTitanReducer.class);
+    protected IntermediateEdgeWriterReducer newEdgesIntoTitanReducer(){
+        spiedIntermediateEdgeWriterReducer = (IntermediateEdgeWriterReducer) newSpy(spiedIntermediateEdgeWriterReducer, IntermediateEdgeWriterReducer.class);
         try {
-            PowerMockito.doReturn(titanGraph).when(spiedEdgesIntoTitanReducer, method(EdgesIntoTitanReducer.class, getTitanGraphInstance, Reducer.Context.class))
+            PowerMockito.doReturn(titanGraph).when(spiedIntermediateEdgeWriterReducer, method(IntermediateEdgeWriterReducer.class, getTitanGraphInstance, Reducer.Context.class))
                     .withArguments(any(Reducer.Context.class));
         } catch (Exception e) {
             fail("couldn't stub getTitanGraphInstance");
         }
-        return spiedEdgesIntoTitanReducer;
+        return spiedIntermediateEdgeWriterReducer;
     }
 
     /**
@@ -221,17 +221,17 @@ public abstract class TestMapReduceDriverUtils {
     }
 
     /**
-     * create a new EdgesIntoTitanReducer driver and stub the context.getMapOutputValueClass method call. This driver
+     * create a new IntermediateEdgeWriterReducer driver and stub the context.getMapOutputValueClass method call. This driver
      * gets used directly it's not used has part of a MapReduceDriver.
      *
-     * @see EdgesIntoTitanReducer
+     * @see com.intel.hadoop.graphbuilder.pipeline.output.titan.IntermediateEdgeWriterReducer
      *
-     * @return new EdgesIntoTitanReducer driver
+     * @return new IntermediateEdgeWriterReducer driver
      */
     protected ReduceDriver newEdgeReducerDriver(){
         newEdgesIntoTitanReducer();
 
-        edgesReduceDriver = newReduceDriver(spiedEdgesIntoTitanReducer, "edgeReducerContextMock");
+        edgesReduceDriver = newReduceDriver(spiedIntermediateEdgeWriterReducer, "edgeReducerContextMock");
 
         PowerMockito.when(edgeReducerContextMock.getMapOutputValueClass()).thenReturn(klass);
 
