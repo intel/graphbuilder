@@ -204,6 +204,15 @@ public abstract class SerializedGraphElement<VidType extends WritableComparable<
             return 1;
         }
     }
+    
+    @Override
+    public String toString() {
+        if (this.graphElement() == null) {
+            return "null";
+        } else {
+            return this.graphElement().toString();
+        }
+    }
 }
 
 
