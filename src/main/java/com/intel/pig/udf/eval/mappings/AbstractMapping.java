@@ -1,0 +1,193 @@
+/*
+ * Copyright 2014 YarcData LLC All Rights Reserved.
+ */
+
+package com.intel.pig.udf.eval.mappings;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.data.Tuple;
+
+/**
+ * Abstract class that provides helper methods for decoding mappings
+ * 
+ */
+public abstract class AbstractMapping {
+
+    /**
+     * Map key for properties
+     */
+    public static final String PROPERTIES = "properties";
+
+    /**
+     * Extracts the string value for a given key from the given map
+     * 
+     * @param map
+     *            Map
+     * @param key
+     *            Key
+     * @param requireNotNull
+     *            Whether a non-null value is required
+     * @return String value if available
+     * @throws NullPointerException
+     *             Thrown if a non-null value is required but a null value is
+     *             found
+     * @throws IllegalArgumentException
+     *             Thrown if the value is not a string
+     */
+    protected String getStringValue(Map<String, Object> map, String key, boolean requireNotNull) {
+        Object value = map.get(key);
+        if (value == null) {
+            if (requireNotNull)
+                throw new NullPointerException("Expected a non-null value for the key " + key);
+            return null;
+        }
+        if (!(value instanceof String))
+            throw new IllegalArgumentException("Expected a String value for the key " + key + " but got a "
+                    + value.getClass().getCanonicalName());
+        return (String) value;
+    }
+
+    /**
+     * Extracts the boolean value for a given key from the given map
+     * 
+     * @param map
+     *            Map
+     * @param key
+     *            Key
+     * @param defaultValue
+     *            Default value to use if the key gives a null value
+     * @return Boolean value
+     * @throws IllegalArgumentException
+     *             Thrown if the key has a non-boolean value
+     */
+    protected boolean getBooleanValue(Map<String, Object> map, String key, boolean defaultValue) {
+        Object value = map.get(key);
+        if (value == null)
+            return defaultValue;
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        } else if (value instanceof String) {
+            // Pig doesn't support booleans as a native data type so need to
+            // support parsing from strings
+            return Boolean.parseBoolean((String) value);
+        } else {
+            throw new IllegalArgumentException("Expected a Boolean value for the key " + key + " but got a "
+                    + value.getClass().getCanonicalName());
+        }
+    }
+
+    /**
+     * Extracts a list value for a given key from the given map
+     * 
+     * @param map
+     *            Map
+     * @param key
+     *            Key
+     * @param requireNotNull
+     *            Whether a non-null value is required
+     * @return List value if available
+     * @throws ExecException
+     * @throws NullPointerException
+     *             Thrown if a non-null value is expected but a null value is
+     *             found
+     * @throws IllegalArgumentException
+     *             Thrown if the value of the key is not of the correct type
+     */
+    @SuppressWarnings("unchecked")
+    protected <T> List<T> getListValue(Map<String, Object> map, String key, boolean requireNotNull) throws ExecException {
+        Object value = map.get(key);
+        if (value == null) {
+            if (requireNotNull)
+                throw new NullPointerException("Expected a non-null value for the key " + key);
+            return (List<T>) null;
+        }
+        if (value instanceof Tuple) {
+            List<T> values = new ArrayList<T>();
+            Tuple tuple = (Tuple) value;
+            for (int i = 0; i < tuple.size(); i++) {
+                value = tuple.get(i);
+                if (value == null)
+                    continue;
+                values.add((T) value);
+            }
+            return values;
+        } else {
+            throw new IllegalArgumentException("Expected a Tuple value for the key " + key + " but got a "
+                    + value.getClass().getCanonicalName());
+        }
+    }
+
+    /**
+     * Extracts a map value for a given key from the given map
+     * 
+     * @param map
+     *            Map
+     * @param key
+     *            Key
+     * @param requireNotNull
+     *            Whether a non-null value is required
+     * @return Map value if available
+     * @throws NullPointerException
+     *             Thrown if a non-null value is expected but a null value is
+     *             found
+     * @throws IllegalArgumentException
+     *             Thrown if the value of the key is not of the correct type
+     */
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> getMapValue(Map<String, Object> map, String key, boolean requireNotNull) {
+        Object value = map.get(key);
+        if (value == null) {
+            if (requireNotNull)
+                throw new NullPointerException("Expected a non-null value for the key " + key);
+            return (Map<String, Object>) null;
+        }
+        if (value instanceof Map<?, ?>) {
+            return (Map<String, Object>) value;
+        } else {
+            throw new IllegalArgumentException("Expected a Map value for the key " + key + " but got a "
+                    + value.getClass().getCanonicalName());
+        }
+    }
+
+    /**
+     * Extracts a map value for a given key from the given map
+     * 
+     * @param map
+     *            Map
+     * @param key
+     *            Key
+     * @param requireNotNull
+     *            Whether a non-null value is required
+     * @return Map value if available
+     * @throws NullPointerException
+     *             Thrown if a non-null value is expected but a null value is
+     *             found
+     * @throws IllegalArgumentException
+     *             Thrown if the value of the key is not of the correct type
+     */
+    @SuppressWarnings("unchecked")
+    protected <T> Map<String, T> getTypedMapValue(Map<String, Object> map, String key, boolean requireNotNull) {
+        Object value = map.get(key);
+        if (value == null) {
+            if (requireNotNull)
+                throw new NullPointerException("Expected a non-null value for the key " + key);
+            return (Map<String, T>) null;
+        }
+        if (value instanceof Map<?, ?>) {
+            Map<String, T> values = new HashMap<String, T>();
+            for (Entry<String, Object> e : ((Map<String, Object>) value).entrySet()) {
+                values.put(e.getKey(), (T) e.getValue());
+            }
+            return values;
+        } else {
+            throw new IllegalArgumentException("Expected a Map value for the key " + key + " but got a "
+                    + value.getClass().getCanonicalName());
+        }
+    }
+}
