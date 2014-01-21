@@ -135,4 +135,4 @@ For the HBase configuration, we recommend tuning the following parameters:
 Dependencies
 ------------
 
-Please use Titan version 0.4.1 to execute Gremlin queries.
+Please use Titan-0.4.1, HBase-0.94.12 and Hadoop-1.2.1 to use the Graph Builder 2.0 (alpha) library.
