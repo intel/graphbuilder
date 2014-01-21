@@ -53,13 +53,13 @@ constructs a bipartite Link-Page graph from Wikipedia dataset (XML format).
 You can download the Wiki page dump containing pages in English language
 from the following location:
 
-[http://download.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2] (http://download.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2)
+http://download.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2
 
 This size of the data is 9.5GB compressed and 44GB uncompressed. A smaller
 version of the Wiki dump containing a subset of the pages can be downloaded
 from:
 
-[http://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles1.xml-p000000010p000010000.bz2] (http://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles1.xml-p000000010p000010000.bz2)
+http://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles1.xml-p000000010p000010000.bz2
 
 We have also provided some toy data to demonstrate the functionality
 of the UDF and macros provided in this distribution. They are in the
@@ -106,7 +106,7 @@ please set the $HADOOP_CLASSPATH as follows:
 
 Hadoop, HBase, and Titan must be tuned carefully to successfully create large
 graphs (in the order of hundreds of million vertices/edges such as the Wikipedia dataset). Please refer to
-[https://github.com/thinkaurelius/titan/wiki/Bulk-Loading](https://github.com/thinkaurelius/titan/wiki/Bulk-Loading) for tuning Titan. In particular,
+https://github.com/thinkaurelius/titan/wiki/Bulk-Loading for tuning Titan. In particular,
 we recommend tuning the following parameters:
 
 - graphbuilder.titan.ids.block-size
