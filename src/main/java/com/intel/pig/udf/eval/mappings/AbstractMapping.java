@@ -22,7 +22,7 @@ public abstract class AbstractMapping {
     /**
      * Map key for properties
      */
-    public static final String PROPERTIES = "properties";
+    protected static final String PROPERTIES = "properties";
 
     /**
      * Extracts the string value for a given key from the given map

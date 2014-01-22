@@ -60,19 +60,19 @@ public class EdgeMapping extends AbstractMapping {
     /**
      * Map key for the source field
      */
-    public static final String SOURCE_FIELD = "source";
+    protected static final String SOURCE_FIELD = "source";
     /**
      * Map key for the target field
      */
-    public static final String TARGET_FIELD = "target";
+    protected static final String TARGET_FIELD = "target";
     /**
      * Map key for the edge label
      */
-    public static final String LABEL = "label";
+    protected static final String LABEL = "label";
     /**
      * Map key for the bidirectional flag
      */
-    public static final String BIDIRECTIONAL = "bidirectional";
+    protected static final String BIDIRECTIONAL = "bidirectional";
 
     private String sourceField, targetField, label;
     private List<String> properties = new ArrayList<String>();

@@ -39,11 +39,11 @@ public class PropertyGraphMapping extends AbstractMapping {
     /**
      * Map key for the vertex mappings tuple
      */
-    public static final String VERTICES = "vertices";
+    protected static final String VERTICES = "vertices";
     /**
      * Map key for the edge mappings tuple
      */
-    public static final String EDGES = "edges";
+    protected static final String EDGES = "edges";
 
     private List<VertexMapping> vertexMappings = new ArrayList<VertexMapping>();
     private List<EdgeMapping> edgeMappings = new ArrayList<EdgeMapping>();

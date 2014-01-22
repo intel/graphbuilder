@@ -55,11 +55,11 @@ public class VertexMapping extends AbstractMapping {
     /**
      * Map key for the id field
      */
-    public static final String ID_FIELD = "id";
+    protected static final String ID_FIELD = "id";
     /**
      * Map key for labels
      */
-    public static final String LABELS = "labels";
+    protected static final String LABELS = "labels";
 
     private String idField;
     private List<String> properties = new ArrayList<String>();
