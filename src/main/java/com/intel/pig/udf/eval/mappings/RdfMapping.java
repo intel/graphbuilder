@@ -38,7 +38,8 @@ import com.intel.hadoop.graphbuilder.util.RDFUtils;
  *   'useStdNamespaces' # 'true',
  *   'includedProperties' # ( 'name', 'age' ),
  *   'excludedProperties' # ( 'dob' ),
- *   'propertyMap' # [ 'type' # 'rdf:type', 'name' # 'http://xmlns.com/foaf/0.1/name' ] ]
+ *   'propertyMap' # [ 'type' # 'rdf:type', 'name' # 'http://xmlns.com/foaf/0.1/name' ],
+ *   'idProperty' # 'ssn' ]
  * </pre>
  * 
  * <h4>base</h4>
@@ -102,6 +103,12 @@ import com.intel.hadoop.graphbuilder.util.RDFUtils;
  * {@code rdf:type} which is a prefixed name while the {@code name} property is
  * mapped to the URI {@code http://xmlns.com/foaf/0.1}.
  * </p>
+ * <h4>idProperty</h4>
+ * <p>
+ * The {@code idProperty} key provides a property that will be used to associate
+ * the vertex ID as a literal value to the generated vertex URI as well as
+ * embedding the vertex ID in that generated URI.
+ * </p>
  */
 public class RdfMapping extends AbstractMapping {
 
@@ -112,11 +119,13 @@ public class RdfMapping extends AbstractMapping {
     protected static final String INCLUDED_PROPERTIES = "includedProperties";
     protected static final String EXCLUDED_PROPERTIES = "excludedProperties";
     protected static final String PROPERTY_MAP = "propertyMap";
+    protected static final String ID_PROPERTY = "idProperty";
 
-    private String baseUri, idBaseUri;
+    private String baseUri, idBaseUri, idProperty;
     private Set<String> includedProperties = new HashSet<String>();
     private Set<String> excludedProperties = new HashSet<String>();
     private Map<String, String> propertyMap = new HashMap<String, String>();
+    private Map<String, String> namespaces = new HashMap<String, String>();
     private boolean useStdNamespaces = false;
     private PrefixMap prefixes;
 
@@ -137,9 +146,12 @@ public class RdfMapping extends AbstractMapping {
      *            Excluded properties
      * @param propertyMap
      *            Property Mapping
+     * @param idProperty
+     *            ID Property
      */
     public RdfMapping(String baseUri, String idBaseUri, Map<String, String> namespaces, boolean useStdNamespaces,
-            Collection<String> includedProperties, Collection<String> excludedProperties, Map<String, String> propertyMap) {
+            Collection<String> includedProperties, Collection<String> excludedProperties, Map<String, String> propertyMap,
+            String idProperty) {
         this.baseUri = baseUri;
         this.idBaseUri = idBaseUri;
         if (includedProperties != null)
@@ -148,11 +160,14 @@ public class RdfMapping extends AbstractMapping {
             this.excludedProperties.addAll(excludedProperties);
         if (propertyMap != null)
             this.propertyMap.putAll(propertyMap);
+        this.idProperty = idProperty;
 
         // Build the prefix map
         this.prefixes = this.useStdNamespaces ? RDFUtils.getStandardPrefixes() : PrefixMapFactory.createForOutput();
-        if (namespaces != null)
+        if (namespaces != null) {
+            this.namespaces.putAll(namespaces);
             this.prefixes.putAll(namespaces);
+        }
     }
 
     /**
@@ -186,6 +201,7 @@ public class RdfMapping extends AbstractMapping {
         Map<String, String> pmap = this.getTypedMapValue(rdfMapping, PROPERTY_MAP, false);
         if (pmap != null)
             this.propertyMap.putAll(pmap);
+        this.idProperty = this.getStringValue(rdfMapping, ID_PROPERTY, false);
 
         this.useStdNamespaces = this.getBooleanValue(rdfMapping, USE_STD_NAMESPACES, false);
         this.prefixes = this.useStdNamespaces ? RDFUtils.getStandardPrefixes() : PrefixMapFactory.createForOutput();
@@ -330,6 +346,19 @@ public class RdfMapping extends AbstractMapping {
     }
 
     /**
+     * Gets the ID property (if any)
+     * <p>
+     * The ID property allows for associating the vertex ID as a literal value
+     * to the generated vertex URI in addition to embedding it into the URI.
+     * <p>
+     * 
+     * @return ID property
+     */
+    public String getIdProperty() {
+        return this.idProperty;
+    }
+
+    /**
      * Resolves a URI reference
      * 
      * @param uriref
@@ -387,8 +416,9 @@ public class RdfMapping extends AbstractMapping {
             properties.put(BASE_URI, this.baseUri);
         if (this.idBaseUri != null)
             properties.put(ID_BASE_URI, this.idBaseUri);
+        if (this.idProperty != null)
+            properties.put(ID_PROPERTY, this.idProperty);
         properties.put(USE_STD_NAMESPACES, Boolean.toString(this.useStdNamespaces).toLowerCase());
-        // TODO Stringify other properties
 
         Iterator<Entry<String, String>> es = properties.entrySet().iterator();
         while (es.hasNext()) {
@@ -401,6 +431,23 @@ public class RdfMapping extends AbstractMapping {
             if (es.hasNext())
                 builder.append(',');
             builder.append(' ');
+        }
+
+        if (this.includedProperties.size() > 0) {
+            builder.append(", ");
+            builder.append(this.tupleToMapKeyValueString(this.includedProperties, INCLUDED_PROPERTIES));
+        }
+        if (this.excludedProperties.size() > 0) {
+            builder.append(", ");
+            builder.append(this.tupleToMapKeyValueString(this.excludedProperties, EXCLUDED_PROPERTIES));
+        }
+        if (this.namespaces.size() > 0) {
+            builder.append(", ");
+            builder.append(this.mapToMapKeyValueString(this.namespaces, NAMESPACES));
+        }
+        if (this.propertyMap.size() > 0) {
+            builder.append(", ");
+            builder.append(this.mapToMapKeyValueString(this.propertyMap, PROPERTY_MAP));
         }
 
         builder.append(']');

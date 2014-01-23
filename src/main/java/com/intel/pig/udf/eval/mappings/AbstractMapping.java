@@ -5,7 +5,9 @@
 package com.intel.pig.udf.eval.mappings;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -189,5 +191,50 @@ public abstract class AbstractMapping {
             throw new IllegalArgumentException("Expected a Map value for the key " + key + " but got a "
                     + value.getClass().getCanonicalName());
         }
+    }
+
+    protected String tupleToMapKeyValueString(Collection<?> items, String key) {
+        return tupleToMapKeyValueString(items.iterator(), key);
+    }
+
+    protected String tupleToMapKeyValueString(Iterator<?> items, String key) {
+        StringBuilder builder = new StringBuilder();
+        builder.append('\'');
+        builder.append(key);
+        builder.append("' # (");
+        while (items.hasNext()) {
+            builder.append('\'');
+            builder.append(items.next());
+            builder.append('\'');
+            if (items.hasNext())
+                builder.append(',');
+            builder.append(' ');
+        }
+        builder.append(')');
+
+        return builder.toString();
+    }
+
+    protected String mapToMapKeyValueString(Map<String, String> map, String key) {
+        StringBuilder builder = new StringBuilder();
+        builder.append('\'');
+        builder.append(key);
+        builder.append("' # [ ");
+
+        Iterator<Entry<String, String>> iter = map.entrySet().iterator();
+        while (iter.hasNext()) {
+            Entry<String, String> e = iter.next();
+            builder.append('\'');
+            builder.append(e.getKey());
+            builder.append("' # '");
+            builder.append(e.getValue());
+            builder.append('\'');
+            if (iter.hasNext())
+                builder.append(',');
+            builder.append(' ');
+        }
+
+        builder.append(']');
+        return builder.toString();
     }
 }
