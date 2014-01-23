@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.data.DataBag;
+import org.apache.pig.data.Tuple;
 
 /**
  * <p>
@@ -113,6 +115,17 @@ public class PropertyGraphMapping extends AbstractMapping {
      */
     public Iterator<EdgeMapping> getEdgeMappings() {
         return this.edgeMappings.iterator();
+    }
+    
+    public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) throws ExecException {
+        Iterator<VertexMapping> vs = this.getVertexMappings();
+        while (vs.hasNext()) {
+            vs.next().apply(input, fieldMapping, output);
+        }
+        Iterator<EdgeMapping> es = this.getEdgeMappings();
+        while (es.hasNext()) {
+            es.next().apply(input, fieldMapping, output);
+        }
     }
 
     public String toString() {

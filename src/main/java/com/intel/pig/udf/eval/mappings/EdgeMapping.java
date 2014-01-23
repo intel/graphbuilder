@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.data.DataBag;
+import org.apache.pig.data.Tuple;
 
 /**
  * <p>
@@ -251,6 +253,10 @@ public class EdgeMapping extends AbstractMapping {
      */
     public boolean isBidirectional() {
         return this.bidirectional;
+    }
+
+    public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) {
+
     }
 
     @Override

@@ -14,6 +14,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.data.DataBag;
+import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
+
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
+import com.intel.hadoop.graphbuilder.graphelements.Vertex;
+import com.intel.hadoop.graphbuilder.types.StringType;
 
 /**
  * <p>
@@ -164,6 +172,46 @@ public class VertexMapping extends AbstractMapping {
      */
     public Map<String, String> getLabels() {
         return Collections.unmodifiableMap(this.labels);
+    }
+
+    /**
+     * Applies the mapping to the given input
+     * 
+     * @param input
+     *            Input
+     * @param fieldMapping
+     *            Field Mapping
+     * @param output
+     *            Output
+     * @throws ExecException
+     */
+    public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) throws ExecException {
+        String idValue = this.getStringValue(input, fieldMapping.get(ID_FIELD));
+        if (idValue == null)
+            return;
+
+        Vertex<StringType> vertex = new Vertex<StringType>(new StringType(idValue));
+        Iterator<String> ps = this.getProperties();
+        while (ps.hasNext()) {
+            String pName = ps.next();
+            Integer pIndex = fieldMapping.get(pName);
+            if (pIndex == null)
+                continue;
+            Object pValue = input.get(pIndex);
+            if (pValue == null)
+                continue;
+            vertex.setProperty(pName, this.pigTypesToSerializedJavaTypes(pValue, input.getType(pIndex)));
+        }
+
+        Map<String, String> labels = this.getLabels();
+        for (Entry<String, String> e : labels.entrySet()) {
+            vertex.setProperty(e.getKey(), new StringType(e.getValue()));
+        }
+
+        // Output the generated vertex
+        SerializedGraphElementStringTypeVids element = new SerializedGraphElementStringTypeVids();
+        element.init(vertex);
+        output.add(TupleFactory.getInstance().newTuple(element));
     }
 
     @Override

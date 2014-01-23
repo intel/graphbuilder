@@ -12,8 +12,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.pig.PigWarning;
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
+
+import com.intel.hadoop.graphbuilder.types.DoubleType;
+import com.intel.hadoop.graphbuilder.types.FloatType;
+import com.intel.hadoop.graphbuilder.types.IntType;
+import com.intel.hadoop.graphbuilder.types.LongType;
+import com.intel.hadoop.graphbuilder.types.StringType;
 
 /**
  * Abstract class that provides helper methods for decoding mappings
@@ -236,5 +245,46 @@ public abstract class AbstractMapping {
 
         builder.append(']');
         return builder.toString();
+    }
+
+    protected String getStringValue(Tuple tuple, Integer field) throws ExecException {
+        if (tuple == null || field == null)
+            return null;
+
+        Object value = tuple.get(field);
+        if (value == null)
+            return null;
+        return value.toString();
+    }
+
+    @SuppressWarnings("rawtypes")
+    protected WritableComparable pigTypesToSerializedJavaTypes(Object value, byte typeByte) throws IllegalArgumentException {
+        WritableComparable object = null;
+
+        switch (typeByte) {
+        case DataType.BYTE:
+            object = new IntType((int) value);
+            break;
+        case DataType.INTEGER:
+            object = new IntType((int) value);
+            break;
+        case DataType.LONG:
+            object = new LongType((long) value);
+            break;
+        case DataType.FLOAT:
+            object = new FloatType((float) value);
+            break;
+        case DataType.DOUBLE:
+            object = new DoubleType((double) value);
+            break;
+        case DataType.CHARARRAY:
+            object = new StringType((String) value);
+            break;
+        default:
+            throw new IllegalArgumentException("Invalid argument exception");
+
+        }
+
+        return object;
     }
 }
