@@ -246,9 +246,9 @@ public class Vertex<VidNameType extends WritableComparable<VidNameType>>
         } else if (vertexId != null && properties == null) {
             return vertexId.toString();
         } else if (vertexId == null && properties != null) {
-            return "null vertex with properties (???) " + properties.toString();
+            return "null vertex with properties (???) [" + properties.toString() + "]";
         } else {
-            return this.vertexId.toString() +  properties.toString();
+            return this.vertexId.toString() + " [" + properties.toString() + " ]";
         }
     }
 
