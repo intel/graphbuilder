@@ -116,7 +116,18 @@ public class PropertyGraphMapping extends AbstractMapping {
     public Iterator<EdgeMapping> getEdgeMappings() {
         return this.edgeMappings.iterator();
     }
-    
+
+    /**
+     * Applies the mapping to the given input
+     * 
+     * @param input
+     *            Input
+     * @param fieldMapping
+     *            Field Mapping
+     * @param output
+     *            Output
+     * @throws ExecException
+     */
     public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) throws ExecException {
         Iterator<VertexMapping> vs = this.getVertexMappings();
         while (vs.hasNext()) {

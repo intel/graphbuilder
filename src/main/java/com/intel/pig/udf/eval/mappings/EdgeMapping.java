@@ -13,6 +13,13 @@ import java.util.Map;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
+
+import com.intel.hadoop.graphbuilder.graphelements.Edge;
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
+import com.intel.hadoop.graphbuilder.graphelements.Vertex;
+import com.intel.hadoop.graphbuilder.types.PropertyMap;
+import com.intel.hadoop.graphbuilder.types.StringType;
 
 /**
  * <p>
@@ -255,8 +262,100 @@ public class EdgeMapping extends AbstractMapping {
         return this.bidirectional;
     }
 
-    public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) {
+    /**
+     * Applies the mapping to the given input
+     * 
+     * @param input
+     *            Input
+     * @param fieldMapping
+     *            Field Mapping
+     * @param output
+     *            Output
+     * @throws ExecException
+     */
+    public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) throws ExecException {
+        System.out.println("Running Edge Mapping " + this.toString());
 
+        String srcValue = this.getStringValue(input, fieldMapping.get(this.sourceField));
+        if (srcValue == null)
+            return;
+        String targetValue = this.getStringValue(input, fieldMapping.get(this.targetField));
+        if (targetValue == null)
+            return;
+
+        // Ensure vertices are created
+        Vertex<StringType> srcVertex = new Vertex<StringType>(new StringType(srcValue));
+        SerializedGraphElementStringTypeVids srcElement = new SerializedGraphElementStringTypeVids();
+        srcElement.init(srcVertex);
+        output.add(TupleFactory.getInstance().newTuple(srcElement));
+        Vertex<StringType> targetVertex = new Vertex<StringType>(new StringType(targetValue));
+        SerializedGraphElementStringTypeVids targetElement = new SerializedGraphElementStringTypeVids();
+        targetElement.init(targetVertex);
+        output.add(TupleFactory.getInstance().newTuple(targetElement));
+
+        // Generate properties for the edge
+        PropertyMap edgeProperties = new PropertyMap();
+        Iterator<String> ps = this.getProperties();
+        while (ps.hasNext()) {
+            String pName = ps.next();
+            Integer pIndex = fieldMapping.get(pName);
+            if (pIndex == null)
+                continue;
+            Object pValue = input.get(pIndex);
+            if (pValue == null)
+                continue;
+            edgeProperties.setProperty(pName, this.pigTypesToSerializedJavaTypes(pValue, input.getType(pIndex)));
+        }
+
+        // Generate the standard edge
+        Edge<StringType> edge = new Edge<StringType>(new StringType(srcValue), new StringType(targetValue), new StringType(
+                this.label));
+        edge.setProperties(edgeProperties);
+        SerializedGraphElementStringTypeVids edgeElement = new SerializedGraphElementStringTypeVids();
+        edgeElement.init(edge);
+        output.add(TupleFactory.getInstance().newTuple(edgeElement));
+        if (this.bidirectional) {
+            // Generate the opposing edge
+            Edge<StringType> opposingEdge = new Edge<StringType>(new StringType(targetValue), new StringType(srcValue),
+                    new StringType(this.label));
+            opposingEdge.setProperties(edgeProperties);
+            SerializedGraphElementStringTypeVids opposingEdgeElement = new SerializedGraphElementStringTypeVids();
+            opposingEdgeElement.init(opposingEdge);
+            output.add(TupleFactory.getInstance().newTuple(opposingEdgeElement));
+        }
+
+        // Generate properties for the inverse edge
+        if (this.inverseLabel == null)
+            return;
+        PropertyMap inverseEdgeProperties = new PropertyMap();
+        ps = this.getInverseProperties();
+        while (ps.hasNext()) {
+            String pName = ps.next();
+            Integer pIndex = fieldMapping.get(pName);
+            if (pIndex == null)
+                continue;
+            Object pValue = input.get(pIndex);
+            if (pValue == null)
+                continue;
+            inverseEdgeProperties.setProperty(pName, this.pigTypesToSerializedJavaTypes(pValue, input.getType(pIndex)));
+        }
+
+        // Generate the inverse edge
+        Edge<StringType> inverseEdge = new Edge<StringType>(new StringType(targetValue), new StringType(srcValue),
+                new StringType(this.inverseLabel));
+        inverseEdge.setProperties(inverseEdgeProperties);
+        SerializedGraphElementStringTypeVids inverseEdgeElement = new SerializedGraphElementStringTypeVids();
+        inverseEdgeElement.init(inverseEdge);
+        output.add(TupleFactory.getInstance().newTuple(inverseEdgeElement));
+        if (this.bidirectional) {
+            // Generate the opposing inverse edge
+            Edge<StringType> opposingInverseEdge = new Edge<StringType>(new StringType(srcValue), new StringType(targetValue),
+                    new StringType(this.inverseLabel));
+            opposingInverseEdge.setProperties(inverseEdgeProperties);
+            SerializedGraphElementStringTypeVids opposingInverseEdgeElement = new SerializedGraphElementStringTypeVids();
+            opposingInverseEdgeElement.init(opposingInverseEdge);
+            output.add(TupleFactory.getInstance().newTuple(opposingInverseEdgeElement));
+        }
     }
 
     @Override

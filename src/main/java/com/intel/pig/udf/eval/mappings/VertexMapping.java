@@ -18,7 +18,6 @@ import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
-import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
 import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
 import com.intel.hadoop.graphbuilder.graphelements.Vertex;
 import com.intel.hadoop.graphbuilder.types.StringType;
@@ -224,37 +223,12 @@ public class VertexMapping extends AbstractMapping {
         builder.append(this.idField);
         builder.append("'");
         if (this.properties.size() > 0) {
-            builder.append(", '");
-            builder.append(PROPERTIES);
-            builder.append("' # (");
-            Iterator<String> ps = this.properties.iterator();
-            while (ps.hasNext()) {
-                builder.append('\'');
-                builder.append(ps.next());
-                builder.append('\'');
-                if (ps.hasNext())
-                    builder.append(',');
-                builder.append(' ');
-            }
-            builder.append(')');
+            builder.append(", ");
+            builder.append(this.tupleToMapKeyValueString(this.properties, PROPERTIES));
         }
         if (this.labels.size() > 0) {
-            builder.append(", '");
-            builder.append(LABELS);
-            builder.append(" # [");
-            Iterator<Entry<String, String>> ls = this.labels.entrySet().iterator();
-            while (ls.hasNext()) {
-                Entry<String, String> l = ls.next();
-                builder.append('\'');
-                builder.append(l.getKey());
-                builder.append("' # '");
-                builder.append(l.getValue());
-                builder.append('\'');
-                if (ls.hasNext())
-                    builder.append(',');
-                builder.append(' ');
-            }
-            builder.append(']');
+            builder.append(", ");
+            builder.append(this.mapToMapKeyValueString(this.labels, LABELS));
         }
         builder.append(" ]");
         return builder.toString();
