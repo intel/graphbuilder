@@ -13,21 +13,33 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.io.Writable;
 import org.apache.jena.iri.IRI;
 import org.apache.jena.iri.IRIFactory;
 import org.apache.jena.riot.system.IRIResolver;
+import org.apache.jena.riot.system.PrefixMap;
+import org.apache.jena.riot.system.PrefixMapFactory;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
+import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
+import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.NodeFactory;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.shared.impl.PrefixMappingImpl;
 import com.hp.hpl.jena.sparql.util.FmtUtils;
+import com.hp.hpl.jena.sparql.util.NodeFactoryExtra;
+import com.intel.hadoop.graphbuilder.graphelements.Edge;
 import com.intel.hadoop.graphbuilder.graphelements.GraphElement;
 import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
+import com.intel.hadoop.graphbuilder.graphelements.Vertex;
+import com.intel.hadoop.graphbuilder.types.DoubleType;
+import com.intel.hadoop.graphbuilder.types.FloatType;
+import com.intel.hadoop.graphbuilder.types.IntType;
+import com.intel.hadoop.graphbuilder.types.LongType;
 import com.intel.hadoop.graphbuilder.types.StringType;
 
 /**
@@ -135,7 +147,7 @@ public class RdfMapping extends AbstractMapping {
     private Map<String, String> propertyMap = new HashMap<String, String>();
     private Map<String, String> namespaces = new HashMap<String, String>();
     private boolean useStdNamespaces = false;
-    private PrefixMapping prefixes;
+    private PrefixMap prefixes;
 
     /**
      * Creates a new RDF Mapping
@@ -171,10 +183,10 @@ public class RdfMapping extends AbstractMapping {
         this.idProperty = idProperty;
 
         // Build the prefix map
-        this.prefixes = this.useStdNamespaces ? PrefixMapping.Standard : new PrefixMappingImpl();
+        this.prefixes = this.useStdNamespaces ? PrefixMapFactory.create(PrefixMapping.Standard) : PrefixMapFactory.create();
         if (namespaces != null) {
             this.namespaces.putAll(namespaces);
-            this.prefixes.setNsPrefixes(namespaces);
+            this.prefixes.putAll(namespaces);
         }
     }
 
@@ -212,10 +224,10 @@ public class RdfMapping extends AbstractMapping {
         this.idProperty = this.getStringValue(rdfMapping, ID_PROPERTY, false);
 
         this.useStdNamespaces = this.getBooleanValue(rdfMapping, USE_STD_NAMESPACES, false);
-        this.prefixes = this.useStdNamespaces ? PrefixMapping.Standard : new PrefixMappingImpl();
+        this.prefixes = this.useStdNamespaces ? PrefixMapFactory.create(PrefixMapping.Standard) : PrefixMapFactory.create();
         Map<String, String> namespaces = this.getTypedMapValue(rdfMapping, NAMESPACES, false);
         if (namespaces != null)
-            this.prefixes.setNsPrefixes(namespaces);
+            this.prefixes.putAll(namespaces);
     }
 
     /**
@@ -259,18 +271,23 @@ public class RdfMapping extends AbstractMapping {
      * Gets a prefix map containing the available namespace declarations
      * <p>
      * Depending on whether {@link #usingStandardNamespaces()} is true this may
-     * be
+     * be a combination of the user supplied namespaces and the standard
+     * namespaces
      * <p>
      * 
      * @return Prefix map
      */
-    public PrefixMapping getNamespaces() {
+    public PrefixMap getNamespaces() {
         return this.prefixes;
     }
 
     /**
      * Gets whether standard namespaces are being used in addition to any user
      * defined ones
+     * <p>
+     * Standard namespaces are supplied by {@link PrefixMapping#Standard} which
+     * contains RDF, RDFS, XSD, OWL and DC
+     * </p>
      * 
      * @return True if using standard namespaces, false otherwise
      */
@@ -402,8 +419,8 @@ public class RdfMapping extends AbstractMapping {
             String nsPrefix = parts[0];
             String localName = uriref.substring(nsPrefix.length() + 1);
 
-            if (this.prefixes.getNsPrefixURI(nsPrefix) != null) {
-                return this.prefixes.getNsPrefixURI(nsPrefix) + localName;
+            if (this.prefixes.contains(nsPrefix)) {
+                return this.prefixes.expand(nsPrefix, localName);
             }
         }
 
@@ -459,18 +476,89 @@ public class RdfMapping extends AbstractMapping {
         if (graphElement == null)
             return;
         if (graphElement.isEdge()) {
-            String predicateUri = this.getPropertyUri(graphElement.getLabel().get());
+            // Edge Mapping
+
+            // Get the predicate URI
+            Edge<StringType> edge = (Edge<StringType>) graphElement.get();
+            String predicateUri = this.getPropertyUri(edge.getLabel().get());
             if (predicateUri == null)
                 return;
-            String sourceId = graphElement.getSrc().toString();
-            String targetId = graphElement.getDst().toString();
+            String sourceId = edge.getSrc().getName().get();
+            String targetId = edge.getDst().getName().get();
+            if (sourceId == null || targetId == null)
+                return;
 
-            Triple edge = new Triple(NodeFactory.createURI(this.getVertexUri(sourceId)), NodeFactory.createURI(predicateUri),
-                    NodeFactory.createURI(this.getVertexUri(targetId)));
-            output.add(TupleFactory.getInstance().newTuple(FmtUtils.stringForTriple(edge, this.prefixes)));
+            // Generate the triple for the edge
+            Triple edgeTriple = new Triple(NodeFactory.createURI(this.getVertexUri(sourceId)),
+                    NodeFactory.createURI(predicateUri), NodeFactory.createURI(this.getVertexUri(targetId)));
+
+            // Output the triple
+            this.outputTriple(edgeTriple, output);
         } else if (element.graphElement().isVertex()) {
-            // TODO Vertex to RDF Mapping
+            // Vertex Mapping
+
+            // Get the vertex URI
+            Vertex<StringType> vertex = (Vertex<StringType>) graphElement.get();
+            String subjectUri = this.getVertexUri(vertex.getId().getName().get());
+            if (subjectUri == null)
+                return;
+            Node subject = NodeFactory.createURI(subjectUri);
+
+            // Add ID Property if this is mapped
+            if (this.idProperty != null) {
+                String idUri = this.getPropertyUri(this.idProperty);
+                if (idUri != null) {
+                    this.outputTriple(
+                            new Triple(subject, NodeFactory.createURI(idUri), NodeFactory.createLiteral(vertex.getId().getName()
+                                    .get())), output);
+                }
+            }
+
+            // Add all relevant properties
+            for (Writable property : vertex.getProperties().getPropertyKeys()) {
+                String propertyName = ((StringType) property).get();
+                String propertyUri = this.getPropertyUri(propertyName);
+                if (propertyUri == null)
+                    continue;
+                Node object = this.toObject(vertex.getProperties().getProperty(propertyName));
+                if (object == null)
+                    continue;
+
+                this.outputTriple(new Triple(subject, NodeFactory.createURI(propertyUri), object), output);
+            }
         }
+    }
+
+    private Node toObject(Writable value) {
+        // Since the RDF Mapping must apply to something generated by the
+        // Property Graph Mapping we know that there should in principal only be
+        // a limited range of types we need to convert
+        if (value instanceof StringType) {
+            return NodeFactory.createLiteral(((StringType) value).get());
+        } else if (value instanceof IntType) {
+            return NodeFactoryExtra.intToNode(((IntType) value).get());
+        } else if (value instanceof LongType) {
+            return NodeFactoryExtra.intToNode(((LongType) value).get());
+        } else if (value instanceof FloatType) {
+            return NodeFactoryExtra.floatToNode(((FloatType) value).get());
+        } else if (value instanceof DoubleType) {
+            return NodeFactoryExtra.doubleToNode(((DoubleType) value).get());
+        } else {
+            // Can't convert other types
+            return null;
+        }
+    }
+
+    /**
+     * Outputs a triple
+     * 
+     * @param t
+     *            Triple
+     * @param output
+     *            Output
+     */
+    private void outputTriple(Triple t, DataBag output) {
+        output.add(TupleFactory.getInstance().newTuple(FmtUtils.stringForTriple(t, null)));
     }
 
     public String toString() {
