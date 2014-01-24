@@ -28,33 +28,44 @@ IMPORT 'pig/graphbuilder.pig';
 -- Delete the output directory
 rmf /tmp/rdf_triples; 
 
--- Customize the way property graph elements are created from raw input
+-- Define our UDFs we'll use later
 DEFINE CreatePropertyGraph com.intel.pig.udf.eval.CreatePropGraphElements;
-
---specify the RDF namespace to use
 DEFINE RDF com.intel.pig.udf.eval.RDF;
 
--- Load in the example data
+-- Load in the example data and filter out any entries with an invalid ID
 employees = LOAD 'examples/data/employees.csv' USING PigStorage(',') 
             AS (id:chararray, name:chararray, age:chararray, dept:chararray, manager:chararray, serviceLength:chararray);
 employees_with_valid_ids = FILTER employees BY id!='';
 
 -- Generate the property graph
+
 -- Firstly transform the employee tuples to add the property graph mapping to each tuple
+-- In this example we provide two mappings that produce vertices and a single mapping to produce edges
+-- See the javadoc for the PropertyGraphMapping class to understand the format of the mapping
 employeesWithMappings = FOREACH employees_with_valid_ids GENERATE (*, [ 'vertices' # ( [ 'id' # 'id', 'properties' # ('name', 'age', 'dept', 'serviceLength'), 'labels' # [ 'type' # 'Person' ] ], 
                                                                                        [ 'id' # 'manager', 'labels' # [ 'type' # 'Manager' ] ] ),
                                                                         'edges' # ( [ 'source' # 'id', 'target' # 'manager', 'label' # 'hasManager', 'inverseLabel' # 'manages' ] ) ]
                                                                   );
 
+-- Then we actually apply the mapping, the use of FLATTEN is required since each tuple produces a bag
+-- of property graph elements and we need them as individual tuples to work on them later
 propertyGraph = FOREACH employeesWithMappings GENERATE FLATTEN(CreatePropertyGraph(*));
--- DUMP propertyGraph;
 
 -- Generate the RDF triples
+
+-- Firstly transform the property graph elements tuples to add the RDF mapping to each tuple
+-- Here we have a mapping with separate Base URIs for properties and vertices, it also maps
+-- specific properties in the property graph to specific RDF URIs using namespaces to provide
+-- prefixed name based representation of these
+-- See the javadoc for the RdfMapping class to understand the format of the mapping
 propertyGraphWithMappings = FOREACH propertyGraph GENERATE (*, [ 'idBase' # 'http://example.org/instances/', 'base' # 'http://example.org/ontology/',
-                                                                 'namespaces' # [ 'foaf' # 'http://xmlns.com/foaf/0.1' ],
+                                                                 'namespaces' # [ 'foaf' # 'http://xmlns.com/foaf/0.1/' ],
                                                                  'propertyMap' # [ 'type' # 'a', 'name' # 'foaf:name', 'age' # 'foaf:age' ],
                                                                  'idProperty' # 'id' ]);
-rdf_triples = FOREACH propertyGraphWithMappings GENERATE FLATTEN(RDF(*)); -- generate the RDF triples
---DESCRIBE rdf_triples;
---STORE rdf_triples INTO '/tmp/rdf_triples' USING PigStorage();
-DUMP rdf_triples;
+                                                                 
+-- Then we generate the actual triples, again we need to use FLATTEN since each input tuple produces a
+-- bag of tuples with each containing a single triple as an NTriples string
+rdf_triples = FOREACH propertyGraphWithMappings GENERATE FLATTEN(RDF(*));
+
+-- Write out the output
+STORE rdf_triples INTO '/tmp/rdf_triples' USING PigStorage();

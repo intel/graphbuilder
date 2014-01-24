@@ -24,14 +24,13 @@ import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
-import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.NodeFactory;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.shared.PrefixMapping;
-import com.hp.hpl.jena.shared.impl.PrefixMappingImpl;
 import com.hp.hpl.jena.sparql.util.FmtUtils;
 import com.hp.hpl.jena.sparql.util.NodeFactoryExtra;
+import com.hp.hpl.jena.vocabulary.RDF;
 import com.intel.hadoop.graphbuilder.graphelements.Edge;
 import com.intel.hadoop.graphbuilder.graphelements.GraphElement;
 import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
@@ -112,11 +111,11 @@ import com.intel.hadoop.graphbuilder.types.StringType;
  * <h4>propertyMap</h4>
  * <p>
  * The {@code propertyMap} key provides a map that is used to customize how
- * properties are translated into property URIs in the RDF. The key is the
- * property whose translation is to be customized and the value is either a
- * Prefixed Name or URI. Prefixed Names may refer to namespaces declared either
- * via the {@code namespaces} key or from the standard namespaces (where
- * included) as shown in the example mapping.
+ * property names and edge labels are translated into property URIs in the RDF.
+ * The key is the property or edge label whose translation is to be customized
+ * and the value is either a Prefixed Name or URI. Prefixed Names may refer to
+ * namespaces declared either via the {@code namespaces} key or from the
+ * standard namespaces (where included) as shown in the example mapping.
  * </p>
  * <p>
  * In the example mapping the {@code type} property is mapped to
@@ -413,7 +412,14 @@ public class RdfMapping extends AbstractMapping {
      * @return URI
      */
     private String resolveUriReference(String uriref) {
-        // First try to resolve as prefixed name
+        if (uriref == null)
+            return null;
+
+        // Allow the special a shortcut to refer to rdf:type predicate
+        if (uriref.equals("a"))
+            return RDF.type.getURI();
+
+        // Then try to resolve as prefixed name
         if (uriref.contains(":")) {
             String[] parts = uriref.split(":");
             String nsPrefix = parts[0];
@@ -558,7 +564,10 @@ public class RdfMapping extends AbstractMapping {
      *            Output
      */
     private void outputTriple(Triple t, DataBag output) {
-        output.add(TupleFactory.getInstance().newTuple(FmtUtils.stringForTriple(t, null)));
+        StringBuilder tripleString = new StringBuilder();
+        tripleString.append(FmtUtils.stringForTriple(t, null));
+        tripleString.append(" .");
+        output.add(TupleFactory.getInstance().newTuple(tripleString.toString()));
     }
 
     public String toString() {
