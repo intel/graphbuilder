@@ -80,9 +80,9 @@ public class PropertyGraphMapping extends AbstractMapping {
     @SuppressWarnings("unchecked")
     public PropertyGraphMapping(Object object) throws ExecException {
         if (object == null)
-            throw new NullPointerException("Cannot create a vertex mapping from a null object");
+            throw new NullPointerException("Cannot create a property graph mapping from a null object");
         if (!(object instanceof Map<?, ?>))
-            throw new IllegalArgumentException("Cannot create a vertex mapping from a non-map object");
+            throw new IllegalArgumentException("Cannot create a property graph mapping from a non-map object of type " + object.getClass().getCanonicalName());
 
         Map<String, Object> mapping = (Map<String, Object>) object;
         List<Object> vs = this.getListValue(mapping, VERTICES, false);

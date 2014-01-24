@@ -112,6 +112,15 @@ public class PropertyMap implements Writable {
     }
 
     /**
+     * Gets the size of the property map
+     * 
+     * @return Size
+     */
+    public int size() {
+        return this.properties.size();
+    }
+
+    /**
      * Property maps are equal if and only if they map exactly the same keys to
      * exactly the same values.
      * 

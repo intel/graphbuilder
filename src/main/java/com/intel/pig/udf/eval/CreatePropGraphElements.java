@@ -80,11 +80,24 @@ public class CreatePropGraphElements extends EvalFunc<DataBag> {
      */
     @Override
     public DataBag exec(Tuple input) throws IOException {
-        if (input == null || input.size() != 1)
+        // TODO Would be good to cope with the case where we get the tuple
+        // directly as well as the case where it gets nested in another tuple as
+        // the current code covers
+
+        if (input == null || input.size() == 0)
             return null;
 
         Map<String, Integer> fieldMapping = new HashMap<String, Integer>();
-        Schema schema = getInputSchema().getField(0).schema;
+        Schema schema = null;
+        if (input.size() == 1) {
+            schema = getInputSchema();
+            if (schema != null) {
+                FieldSchema fs = schema.getField(0);
+                schema = fs != null ? fs.schema : null;
+            }
+        } else {
+            schema = getInputSchema();
+        }
         if (schema == null)
             return null;
 
@@ -96,10 +109,17 @@ public class CreatePropGraphElements extends EvalFunc<DataBag> {
         }
 
         // Get the data and the mapping
-        Tuple dataTuple = (Tuple) input.get(0);
-        PropertyGraphMapping mapping = new PropertyGraphMapping(dataTuple.get(dataTuple.size() - 1));
         DataBag outputBag = BagFactory.getInstance().newDefaultBag();
-        mapping.apply(dataTuple, fieldMapping, outputBag);
+        if (input.size() == 1) {
+            // Assumes the actual tuple is nested inside this tuple
+            Tuple dataTuple = (Tuple) input.get(0);
+            PropertyGraphMapping mapping = new PropertyGraphMapping(dataTuple.get(dataTuple.size() - 1));
+            mapping.apply(dataTuple, fieldMapping, outputBag);
+        } else {
+            // Assumes we've received the tuple of data plus mapping directly
+            PropertyGraphMapping mapping = new PropertyGraphMapping(input.get(input.size() - 1));
+            mapping.apply(input, fieldMapping, outputBag);
+        }
         return outputBag;
     }
 
