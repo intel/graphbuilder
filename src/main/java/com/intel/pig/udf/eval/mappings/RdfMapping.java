@@ -16,11 +16,19 @@ import java.util.Map.Entry;
 import org.apache.jena.iri.IRI;
 import org.apache.jena.iri.IRIFactory;
 import org.apache.jena.riot.system.IRIResolver;
-import org.apache.jena.riot.system.PrefixMap;
-import org.apache.jena.riot.system.PrefixMapFactory;
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.data.DataBag;
+import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
 
-import com.intel.hadoop.graphbuilder.util.RDFUtils;
+import com.hp.hpl.jena.graph.NodeFactory;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.shared.PrefixMapping;
+import com.hp.hpl.jena.shared.impl.PrefixMappingImpl;
+import com.hp.hpl.jena.sparql.util.FmtUtils;
+import com.intel.hadoop.graphbuilder.graphelements.GraphElement;
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
+import com.intel.hadoop.graphbuilder.types.StringType;
 
 /**
  * <p>
@@ -112,8 +120,8 @@ import com.intel.hadoop.graphbuilder.util.RDFUtils;
  */
 public class RdfMapping extends AbstractMapping {
 
-    protected static final String BASE_URI = "baseUri";
-    protected static final String ID_BASE_URI = "idBaseUri";
+    protected static final String BASE_URI = "base";
+    protected static final String ID_BASE_URI = "idBase";
     protected static final String NAMESPACES = "namespaces";
     protected static final String USE_STD_NAMESPACES = "useStdNamespaces";
     protected static final String INCLUDED_PROPERTIES = "includedProperties";
@@ -127,7 +135,7 @@ public class RdfMapping extends AbstractMapping {
     private Map<String, String> propertyMap = new HashMap<String, String>();
     private Map<String, String> namespaces = new HashMap<String, String>();
     private boolean useStdNamespaces = false;
-    private PrefixMap prefixes;
+    private PrefixMapping prefixes;
 
     /**
      * Creates a new RDF Mapping
@@ -163,10 +171,10 @@ public class RdfMapping extends AbstractMapping {
         this.idProperty = idProperty;
 
         // Build the prefix map
-        this.prefixes = this.useStdNamespaces ? RDFUtils.getStandardPrefixes() : PrefixMapFactory.createForOutput();
+        this.prefixes = this.useStdNamespaces ? PrefixMapping.Standard : new PrefixMappingImpl();
         if (namespaces != null) {
             this.namespaces.putAll(namespaces);
-            this.prefixes.putAll(namespaces);
+            this.prefixes.setNsPrefixes(namespaces);
         }
     }
 
@@ -204,10 +212,10 @@ public class RdfMapping extends AbstractMapping {
         this.idProperty = this.getStringValue(rdfMapping, ID_PROPERTY, false);
 
         this.useStdNamespaces = this.getBooleanValue(rdfMapping, USE_STD_NAMESPACES, false);
-        this.prefixes = this.useStdNamespaces ? RDFUtils.getStandardPrefixes() : PrefixMapFactory.createForOutput();
+        this.prefixes = this.useStdNamespaces ? PrefixMapping.Standard : new PrefixMappingImpl();
         Map<String, String> namespaces = this.getTypedMapValue(rdfMapping, NAMESPACES, false);
         if (namespaces != null)
-            this.prefixes.putAll(namespaces);
+            this.prefixes.setNsPrefixes(namespaces);
     }
 
     /**
@@ -256,7 +264,7 @@ public class RdfMapping extends AbstractMapping {
      * 
      * @return Prefix map
      */
-    public PrefixMap getNamespaces() {
+    public PrefixMapping getNamespaces() {
         return this.prefixes;
     }
 
@@ -300,6 +308,27 @@ public class RdfMapping extends AbstractMapping {
                 // excluded
                 return !this.excludedProperties.contains(property);
             }
+        }
+    }
+
+    /**
+     * Gets the URI for a given vertex
+     * <p>
+     * See the documentation on {@link #getIdBaseUri()} to see how this is
+     * calculated.
+     * </p>
+     * 
+     * @param vertex
+     *            Vertex ID
+     * @return Vertex URI
+     */
+    public String getVertexUri(String vertex) {
+        if (this.idBaseUri != null) {
+            return this.idBaseUri + vertex;
+        } else if (this.baseUri != null) {
+            return this.baseUri + vertex;
+        } else {
+            return vertex;
         }
     }
 
@@ -373,8 +402,8 @@ public class RdfMapping extends AbstractMapping {
             String nsPrefix = parts[0];
             String localName = uriref.substring(nsPrefix.length() + 1);
 
-            if (this.prefixes.contains(nsPrefix)) {
-                return this.prefixes.expand(nsPrefix, localName);
+            if (this.prefixes.getNsPrefixURI(nsPrefix) != null) {
+                return this.prefixes.getNsPrefixURI(nsPrefix) + localName;
             }
         }
 
@@ -390,13 +419,17 @@ public class RdfMapping extends AbstractMapping {
      * @return Resolved URI
      */
     private String resolveUri(String uri) {
+        return this.resolveUri(uri, this.baseUri);
+    }
+
+    private String resolveUri(String uri, String baseUri) {
         IRI iri = IRIFactory.iriImplementation().create(uri);
         if (iri.isAbsolute()) {
             // Already an absolute URI
             return uri;
-        } else if (this.baseUri != null) {
+        } else if (baseUri != null) {
             // Attempt to resolve against Base URI
-            return IRIResolver.resolveString(uri, this.baseUri);
+            return IRIResolver.resolveString(uri, baseUri);
         } else if (iri.hasViolation(false)) {
             // Check for illegal URI after trying to relativize because
             // that may succeed and relativization will error if it fails
@@ -405,6 +438,38 @@ public class RdfMapping extends AbstractMapping {
         } else {
             // Leave as a relative URI
             return uri;
+        }
+    }
+
+    /**
+     * Applies the mapping to the given input
+     * 
+     * @param input
+     *            Input
+     * @param output
+     *            Output
+     * @throws ExecException
+     */
+    @SuppressWarnings("unchecked")
+    public void apply(Tuple input, DataBag output) throws ExecException {
+        if (input == null || input.size() != 2)
+            return;
+        SerializedGraphElementStringTypeVids element = (SerializedGraphElementStringTypeVids) input.get(0);
+        GraphElement<StringType> graphElement = element.graphElement();
+        if (graphElement == null)
+            return;
+        if (graphElement.isEdge()) {
+            String predicateUri = this.getPropertyUri(graphElement.getLabel().get());
+            if (predicateUri == null)
+                return;
+            String sourceId = graphElement.getSrc().toString();
+            String targetId = graphElement.getDst().toString();
+
+            Triple edge = new Triple(NodeFactory.createURI(this.getVertexUri(sourceId)), NodeFactory.createURI(predicateUri),
+                    NodeFactory.createURI(this.getVertexUri(targetId)));
+            output.add(TupleFactory.getInstance().newTuple(FmtUtils.stringForTriple(edge, this.prefixes)));
+        } else if (element.graphElement().isVertex()) {
+            // TODO Vertex to RDF Mapping
         }
     }
 

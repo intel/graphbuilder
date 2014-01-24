@@ -129,6 +129,9 @@ public class PropertyGraphMapping extends AbstractMapping {
      * @throws ExecException
      */
     public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) throws ExecException {
+        if (input == null)
+            return;
+
         Iterator<VertexMapping> vs = this.getVertexMappings();
         while (vs.hasNext()) {
             vs.next().apply(input, fieldMapping, output);

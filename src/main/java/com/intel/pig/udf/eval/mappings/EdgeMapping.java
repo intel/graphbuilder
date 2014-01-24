@@ -274,7 +274,8 @@ public class EdgeMapping extends AbstractMapping {
      * @throws ExecException
      */
     public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) throws ExecException {
-        System.out.println("Running Edge Mapping " + this.toString());
+        if (input == null)
+            return;
 
         String srcValue = this.getStringValue(input, fieldMapping.get(this.sourceField));
         if (srcValue == null)

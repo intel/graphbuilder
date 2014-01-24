@@ -185,7 +185,10 @@ public class VertexMapping extends AbstractMapping {
      * @throws ExecException
      */
     public void apply(Tuple input, Map<String, Integer> fieldMapping, DataBag output) throws ExecException {
-        String idValue = this.getStringValue(input, fieldMapping.get(ID_FIELD));
+        if (input == null)
+            return;
+
+        String idValue = this.getStringValue(input, fieldMapping.get(this.idField));
         if (idValue == null)
             return;
 

@@ -25,19 +25,36 @@
 REGISTER target/graphbuilder-2.0-alpha-with-deps.jar;
 IMPORT 'pig/graphbuilder.pig';
 
-rmf /tmp/rdf_triples; --delete the output directory
+-- Delete the output directory
+rmf /tmp/rdf_triples; 
 
 -- Customize the way property graph elements are created from raw input
-DEFINE CreatePropGraphElements com.intel.pig.udf.eval.CreatePropGraphElements('-v "OWL.People,id=name,age,dept" "OWL.People,manager" -e "id,manager,OWL.worksUnder,underManager"');
+DEFINE CreatePropertyGraph com.intel.pig.udf.eval.CreatePropGraphElements;
 
 --specify the RDF namespace to use
-DEFINE RDF com.intel.pig.udf.eval.RDF('OWL');
+DEFINE RDF com.intel.pig.udf.eval.RDF;
 
+-- Load in the example data
 employees = LOAD 'examples/data/employees.csv' USING PigStorage(',') 
-				AS (id:chararray, name:chararray, age:chararray, dept:chararray, manager:chararray, underManager:chararray);
+            AS (id:chararray, name:chararray, age:chararray, dept:chararray, manager:chararray, serviceLength:chararray);
 employees_with_valid_ids = FILTER employees BY id!='';
-pge = FOREACH employees_with_valid_ids GENERATE FLATTEN(CreatePropGraphElements(*)); -- generate the property graph elements
-merged = MERGE_DUPLICATE_ELEMENTS(pge);
-rdf_triples = FOREACH merged GENERATE FLATTEN(RDF(*)); -- generate the RDF triples
-DESCRIBE rdf_triples;
-STORE rdf_triples INTO '/tmp/rdf_triples' USING PigStorage();
+
+-- Generate the property graph
+-- Firstly transform the employee tuples to add the property graph mapping to each tuple
+employeesWithMappings = FOREACH employees_with_valid_ids GENERATE (*, [ 'vertices' # ( [ 'id' # 'id', 'properties' # ('name', 'age', 'dept', 'serviceLength'), 'labels' # [ 'type' # 'Person' ] ], 
+                                                                                       [ 'id' # 'manager', 'labels' # [ 'type' # 'Manager' ] ] ),
+                                                                        'edges' # ( [ 'source' # 'id', 'target' # 'manager', 'label' # 'hasManager', 'inverseLabel' # 'manages' ] ) ]
+                                                                  );
+
+propertyGraph = FOREACH employeesWithMappings GENERATE FLATTEN(CreatePropertyGraph(*));
+-- DUMP propertyGraph;
+
+-- Generate the RDF triples
+propertyGraphWithMappings = FOREACH propertyGraph GENERATE (*, [ 'idBase' # 'http://example.org/instances/', 'base' # 'http://example.org/ontology/',
+                                                                 'namespaces' # [ 'foaf' # 'http://xmlns.com/foaf/0.1' ],
+                                                                 'propertyMap' # [ 'type' # 'a', 'name' # 'foaf:name', 'age' # 'foaf:age' ],
+                                                                 'idProperty' # 'id' ]);
+rdf_triples = FOREACH propertyGraphWithMappings GENERATE FLATTEN(RDF(*)); -- generate the RDF triples
+--DESCRIBE rdf_triples;
+--STORE rdf_triples INTO '/tmp/rdf_triples' USING PigStorage();
+DUMP rdf_triples;
