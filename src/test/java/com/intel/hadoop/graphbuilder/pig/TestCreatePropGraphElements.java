@@ -149,7 +149,6 @@ public class TestCreatePropGraphElements {
     private void checkResults(Tuple t, int expectedTuples, int[] expectedProperties) throws IOException {
         DataBag result = (DataBag) createPropGraphElementsUDF.exec(t);
 
-        System.out.println(result.toString());
         Assert.assertEquals(expectedTuples, result.size());
 
         if (expectedProperties.length < expectedTuples)

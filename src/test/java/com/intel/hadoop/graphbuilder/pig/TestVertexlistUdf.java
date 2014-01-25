@@ -37,16 +37,16 @@ import com.intel.hadoop.graphbuilder.types.StringType;
 import com.intel.pig.data.PropertyGraphElementTuple;
 
 public class TestVertexlistUdf {
-    EvalFunc<?> toEdgelistUdf0;
-    EvalFunc<?> toEdgelistUdf1;
+    EvalFunc<?> toVertexlistUdf0;
+    EvalFunc<?> toVertexlistUdf1;
 
     @Before
     public void setup() throws Exception {
         System.out.println("*** Starting VertexList test cases ***");
-        toEdgelistUdf0 = (EvalFunc<?>) PigContext
+        toVertexlistUdf0 = (EvalFunc<?>) PigContext
                 .instantiateFuncFromSpec(
                         "com.intel.pig.udf.eval.VertexList('false')");
-        toEdgelistUdf1 = (EvalFunc<?>) PigContext
+        toVertexlistUdf1 = (EvalFunc<?>) PigContext
                 .instantiateFuncFromSpec(
                         "com.intel.pig.udf.eval.VertexList('true')");
     }
@@ -70,19 +70,19 @@ public class TestVertexlistUdf {
         PropertyGraphElementTuple t = new PropertyGraphElementTuple(1);
         t.set(0, serializedGraphElement);
 
-        String statement0 = (String) toEdgelistUdf0.exec(t);
+        String statement0 = (String) toVertexlistUdf0.exec(t);
         assertEquals(
                     "Vertex tuple mismatch",
                     statement0,
                     "Employee001\tHAWK.People");
 
-        String statement1 = (String) toEdgelistUdf1.exec(t);
+        String statement1 = (String) toVertexlistUdf1.exec(t);
         System.out.println(statement1);
-        boolean flag = statement1.contains("HAWK.People.Employee001");
+        boolean flag = statement1.contains("Employee001\tHAWK.People");
         assertTrue("Vertex tuple mismatch", flag);
-        flag = statement1.contains("name:Alice");
+        flag = statement1.contains("name=Alice");
         assertTrue("Vertex tuple mismatch", flag);
-        flag = statement1.contains("age:30");
+        flag = statement1.contains("age=30");
         assertTrue("Vertex tuple mismatch", flag);
     }
 

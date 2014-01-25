@@ -194,15 +194,19 @@ public class PropertyMap implements Writable {
     public void write(DataOutput out) throws IOException {
         this.properties.write(out);
     }
+    
 
     /**
      * Convert the {@code PropertyMap} to a {@code String}
      * 
      * @return String representation of the {@code PropertyMap}
      */
-
     @Override
     public String toString() {
+        return toString("=",", ");
+    }
+    
+    public String toString(String keyValueSep, String pairSep) {
         StringBuilder builder = new StringBuilder();
 
         if (!properties.isEmpty()) {
@@ -210,10 +214,10 @@ public class PropertyMap implements Writable {
             while (iter.hasNext()) {
                 Map.Entry<Writable, Writable> entry = iter.next();
                 builder.append(entry.getKey());
-                builder.append('=');
+                builder.append(keyValueSep);
                 builder.append(entry.getValue());
                 if (iter.hasNext())
-                    builder.append(", ");
+                    builder.append(pairSep);
             }
         }
 

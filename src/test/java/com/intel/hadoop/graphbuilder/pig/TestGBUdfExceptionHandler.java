@@ -30,38 +30,21 @@ import com.intel.pig.udf.GBUdfException;
 import com.intel.pig.udf.GBUdfExceptionHandler;
 
 public class TestGBUdfExceptionHandler {
-	EvalFunc<?> toRdfUdf;
+    EvalFunc<?> toRdfUdf;
 
-	@Before
-	public void setup() throws Exception {
-		System.out.println("*** Starting GBUdfExceptionHandler tests. ***");
-		toRdfUdf = (EvalFunc<?>) PigContext
-				.instantiateFuncFromSpec("com.intel.pig.udf.eval.RDF('OWL')");
+    @Before
+    public void setup() throws Exception {
+        toRdfUdf = (EvalFunc<?>) PigContext.instantiateFuncFromSpec("com.intel.pig.udf.eval.RDF");
 
-		GBUdfExceptionHandler.handleError(toRdfUdf,
-                new NullPointerException());
-		GBUdfExceptionHandler.handleError(toRdfUdf,
-                new RuntimeException());
-		GBUdfExceptionHandler.handleError(toRdfUdf,
-                new IOException("test_exception"));
+        GBUdfExceptionHandler.handleError(toRdfUdf, new NullPointerException());
+        GBUdfExceptionHandler.handleError(toRdfUdf, new RuntimeException());
+        GBUdfExceptionHandler.handleError(toRdfUdf, new IOException("test_exception"));
 
-	}
+    }
 
-	@Test
-	public void runTests() throws IOException {
-
-	}
-
-	@Test(expected = RuntimeException.class)
-	public void testFailureCase() throws IOException {
-		System.out.println("Testing failure cases");
-		GBUdfExceptionHandler.handleError(toRdfUdf,
-                new IOException(new GBUdfException("test_exception")));
-	}
-
-	@After
-	public void done() {
-		System.out.println("*** Done with the GBUdfExceptionHandler tests ***");
-	}
+    @Test(expected = RuntimeException.class)
+    public void testFailureCase() throws IOException {
+        GBUdfExceptionHandler.handleError(toRdfUdf, new IOException(new GBUdfException("test_exception")));
+    }
 
 }
