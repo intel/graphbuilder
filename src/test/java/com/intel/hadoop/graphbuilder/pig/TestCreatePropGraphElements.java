@@ -35,6 +35,7 @@ import com.intel.hadoop.graphbuilder.graphelements.Vertex;
 import com.intel.hadoop.graphbuilder.types.PropertyMap;
 import com.intel.pig.data.PropertyGraphElementTuple;
 import com.intel.pig.udf.eval.CreatePropGraphElements;
+import com.intel.pig.udf.eval.mappings.EdgeMapping;
 import com.intel.hadoop.graphbuilder.types.*;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
@@ -84,11 +85,14 @@ public class TestCreatePropGraphElements {
     }
 
     private List<String> prepareVertexMappingProperties() {
+        return this.prepareVertexMappingProperties(new String[] { "age", "managerId", "department", "tenure" });
+    }
+
+    private List<String> prepareVertexMappingProperties(String[] properties) {
         List<String> ps = new ArrayList<>();
-        ps.add("age");
-        ps.add("managerId");
-        ps.add("department");
-        ps.add("tenure");
+        for (String p : properties) {
+            ps.add(p);
+        }
         return ps;
     }
 
@@ -138,13 +142,14 @@ public class TestCreatePropGraphElements {
         t.set(4, tenure);
         t.set(5, department);
         t.set(6, mapping);
-
+        
         return t;
     }
 
     private void checkResults(Tuple t, int expectedTuples, int[] expectedProperties) throws IOException {
         DataBag result = (DataBag) createPropGraphElementsUDF.exec(t);
 
+        System.out.println(result.toString());
         Assert.assertEquals(expectedTuples, result.size());
 
         if (expectedProperties.length < expectedTuples)
@@ -191,6 +196,46 @@ public class TestCreatePropGraphElements {
         Tuple tuple = this.prepareData();
         tuple.set(2, null);
         checkResults(tuple, 1, new int[] { 3 });
+    }
+
+    @Test
+    public void direct_tuple_04() throws IOException {
+        Schema schema = this.prepareSchema();
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Map<String, Object> vertexMapping = this
+                .prepareVertexMapping(this.prepareVertexMappingProperties(new String[] { "age" }));
+        List<Map<String, Object>> vertexMappings = new ArrayList<Map<String, Object>>();
+        vertexMappings.add(vertexMapping);
+
+        checkResults(this.prepareData(this.prepareMappings(vertexMappings, new ArrayList<Map<String, Object>>())), 1,
+                new int[] { 1 });
+    }
+    
+    @Test
+    public void direct_tuple_05() throws IOException {
+        Schema schema = this.prepareSchema();
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Map<String, Object> edgeMapping = new EdgeMapping("id", "managerId", "hasManager", null, null, null, false).toMap();
+        List<Map<String, Object>> edgeMappings = new ArrayList<Map<String, Object>>();
+        edgeMappings.add(edgeMapping);
+
+        checkResults(this.prepareData(this.prepareMappings(new ArrayList<Map<String, Object>>(), edgeMappings)), 3,
+                new int[] { 0, 0, 0 });
+    }
+    
+    @Test
+    public void direct_tuple_06() throws IOException {
+        Schema schema = this.prepareSchema();
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Map<String, Object> edgeMapping = new EdgeMapping("id", "managerId", "hasManager", "manages", null, null, false).toMap();
+        List<Map<String, Object>> edgeMappings = new ArrayList<Map<String, Object>>();
+        edgeMappings.add(edgeMapping);
+
+        checkResults(this.prepareData(this.prepareMappings(new ArrayList<Map<String, Object>>(), edgeMappings)), 4,
+                new int[] { 0, 0, 0, 0 });
     }
 
     @Test

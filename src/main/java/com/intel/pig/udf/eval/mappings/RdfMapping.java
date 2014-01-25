@@ -570,6 +570,27 @@ public class RdfMapping extends AbstractMapping {
         output.add(TupleFactory.getInstance().newTuple(tripleString.toString()));
     }
 
+    @Override
+    public Map<String, Object> toMap() {
+        Map<String, Object> mapping = new HashMap<String, Object>();
+        if (this.baseUri != null)
+            mapping.put(BASE_URI, this.baseUri);
+        if (this.idBaseUri != null)
+            mapping.put(ID_BASE_URI, this.idBaseUri);
+        if (this.idProperty != null)
+            mapping.put(ID_PROPERTY, this.idProperty);
+        mapping.put(USE_STD_NAMESPACES, Boolean.toString(this.useStdNamespaces).toLowerCase());
+        if (this.namespaces.size() > 0)
+            mapping.put(NAMESPACES, this.namespaces);
+        if (this.includedProperties.size() > 0)
+            mapping.put(INCLUDED_PROPERTIES, TupleFactory.getInstance().newTuple(this.includedProperties));
+        if (this.excludedProperties.size() > 0)
+            mapping.put(EXCLUDED_PROPERTIES, TupleFactory.getInstance().newTuple(this.excludedProperties));
+        if (this.propertyMap.size() > 0)
+            mapping.put(PROPERTY_MAP, this.propertyMap);
+        return mapping;
+    }
+
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append('[');

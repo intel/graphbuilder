@@ -36,6 +36,13 @@ public abstract class AbstractMapping {
     protected static final String PROPERTIES = "properties";
 
     /**
+     * Converts the mapping back into a map that Pig can serialize
+     * 
+     * @return Map
+     */
+    public abstract Map<String, Object> toMap();
+
+    /**
      * Extracts the string value for a given key from the given map
      * 
      * @param map

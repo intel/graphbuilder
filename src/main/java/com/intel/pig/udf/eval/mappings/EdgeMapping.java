@@ -6,6 +6,7 @@ package com.intel.pig.udf.eval.mappings;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -357,6 +358,22 @@ public class EdgeMapping extends AbstractMapping {
             opposingInverseEdgeElement.init(opposingInverseEdge);
             output.add(TupleFactory.getInstance().newTuple(opposingInverseEdgeElement));
         }
+    }
+
+    @Override
+    public Map<String, Object> toMap() {
+        Map<String, Object> mapping = new HashMap<String, Object>();
+        mapping.put(SOURCE_FIELD, this.sourceField);
+        mapping.put(TARGET_FIELD, this.targetField);
+        mapping.put(LABEL, this.label);
+        if (this.inverseLabel != null)
+            mapping.put(INVERSE_LABEL, this.inverseLabel);
+        mapping.put(BIDIRECTIONAL, Boolean.toString(this.bidirectional).toLowerCase());
+        if (this.properties.size() > 0)
+            mapping.put(PROPERTIES, TupleFactory.getInstance().newTuple(this.properties));
+        if (this.inverseProperties.size() > 0)
+            mapping.put(INVERSE_PROPERTIES, TupleFactory.getInstance().newTuple(this.inverseProperties));
+        return mapping;
     }
 
     @Override

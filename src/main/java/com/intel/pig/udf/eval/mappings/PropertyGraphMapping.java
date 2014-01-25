@@ -6,6 +6,7 @@ package com.intel.pig.udf.eval.mappings;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.Map;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
 
 /**
  * <p>
@@ -82,7 +84,8 @@ public class PropertyGraphMapping extends AbstractMapping {
         if (object == null)
             throw new NullPointerException("Cannot create a property graph mapping from a null object");
         if (!(object instanceof Map<?, ?>))
-            throw new IllegalArgumentException("Cannot create a property graph mapping from a non-map object of type " + object.getClass().getCanonicalName());
+            throw new IllegalArgumentException("Cannot create a property graph mapping from a non-map object of type "
+                    + object.getClass().getCanonicalName());
 
         Map<String, Object> mapping = (Map<String, Object>) object;
         List<Object> vs = this.getListValue(mapping, VERTICES, false);
@@ -140,6 +143,22 @@ public class PropertyGraphMapping extends AbstractMapping {
         while (es.hasNext()) {
             es.next().apply(input, fieldMapping, output);
         }
+    }
+
+    @Override
+    public Map<String, Object> toMap() {
+        Map<String, Object> mapping = new HashMap<String, Object>();
+        List<Map<String, Object>> vertexMappings = new ArrayList<Map<String, Object>>();
+        for (VertexMapping vertexMapping : this.vertexMappings) {
+            vertexMappings.add(vertexMapping.toMap());
+        }
+        mapping.put(VERTICES, TupleFactory.getInstance().newTuple(vertexMappings));
+        List<Map<String, Object>> edgeMappings = new ArrayList<Map<String, Object>>();
+        for (EdgeMapping edgeMapping : this.edgeMappings) {
+            edgeMappings.add(edgeMapping.toMap());
+        }
+        mapping.put(EDGES, TupleFactory.getInstance().newTuple(edgeMappings));
+        return mapping;
     }
 
     public String toString() {

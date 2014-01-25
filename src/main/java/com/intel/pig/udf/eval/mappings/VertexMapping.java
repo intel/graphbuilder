@@ -217,6 +217,17 @@ public class VertexMapping extends AbstractMapping {
     }
 
     @Override
+    public Map<String, Object> toMap() {
+        Map<String, Object> mapping = new HashMap<String, Object>();
+        mapping.put(ID_FIELD, this.idField);
+        if (this.properties.size() > 0)
+            mapping.put(PROPERTIES, TupleFactory.getInstance().newTuple(this.properties));
+        if (this.labels.size() > 0)
+            mapping.put(LABELS, TupleFactory.getInstance().newTuple(this.labels));
+        return mapping;
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append('[');
