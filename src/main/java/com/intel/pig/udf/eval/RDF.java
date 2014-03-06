@@ -1,4 +1,5 @@
 /* Copyright (C) 2013 Intel Corporation.
+ * Copyright (C) 2014 YarcData LLC
  *     All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +19,7 @@
  */
 package com.intel.pig.udf.eval;
 
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
 import com.intel.pig.data.PropertyGraphElementTuple;
 import com.intel.pig.udf.GBUdfExceptionHandler;
 import com.intel.pig.udf.eval.mappings.RdfMapping;
@@ -36,21 +38,11 @@ import java.io.IOException;
  * statements.
  * </p>
  * <p>
- * If the
- * {@link com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement} is
- * null, this UDF returns null.
+ * If the {@link SerializedGraphElement} is null, this UDF returns null.
  * </p>
- * <b>Example:</b>
- * 
- * <pre>
- *           DEFINE RDF com.intel.pig.udf.eval.RDF('OWL');--specify the namespace to use with the constructor
- *           DEFINE CreatePropGraphElements com.intel.pig.udf.eval.CreatePropGraphElements2('-v "[OWL.People],id=name,age,dept" "[OWL.People],manager" -e "id,manager,OWL.worksUnder,underManager"');
- *           x = LOAD 'examples/data/employees.csv' USING PigStorage(',') as (id:chararray, name:chararray, age:chararray, dept:chararray, manager:chararray, underManager:chararray);
- *           x = FILTER x by id!='';--remove employee records with missing ids
- *           pge = FOREACH x GENERATE flatten(CreatePropGraphElements(*));--create the property graph elements from raw source data
- *           rdf_triples = FOREACH pge GENERATE FLATTEN(RDF(*));--create RDF tuples from the property graph elements
- *           STORE rdf_triples INTO '/tmp/rdf_triples' USING PigStorage();
- * </pre>
+ * <p>
+ * See <strong>examples/rdf_example.pig</strong> for a usage example
+ * </p>
  */
 @MonitoredUDF(errorCallback = GBUdfExceptionHandler.class)
 public class RDF extends EvalFunc<DataBag> {

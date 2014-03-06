@@ -1,4 +1,5 @@
 /* Copyright (C) 2013 Intel Corporation.
+ * Copyright 2014 YarcData LLC
  *     All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +27,6 @@ import java.io.IOException;
 import com.intel.hadoop.graphbuilder.graphelements.VertexID;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.impl.PigContext;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 

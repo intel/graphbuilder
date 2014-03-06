@@ -1,4 +1,5 @@
 /* Copyright (C) 2013 Intel Corporation.
+ * Copyright 2014 YarcData LLC
  *     All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,24 +20,15 @@
 package com.intel.hadoop.graphbuilder.pig;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import com.intel.hadoop.graphbuilder.graphelements.GraphElement;
 import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
-import com.intel.hadoop.graphbuilder.graphelements.Vertex;
-import com.intel.hadoop.graphbuilder.types.PropertyMap;
-import com.intel.pig.data.PropertyGraphElementTuple;
 import com.intel.pig.udf.eval.CreatePropGraphElements;
 import com.intel.pig.udf.eval.mappings.EdgeMapping;
-import com.intel.hadoop.graphbuilder.types.*;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.FuncSpec;
 import org.apache.pig.backend.executionengine.ExecException;
@@ -47,7 +39,6 @@ import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.PigContext;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

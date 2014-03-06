@@ -33,96 +33,74 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.intel.hadoop.graphbuilder.graphelements.Edge;
-import com.intel.hadoop.graphbuilder.graphelements
-        .SerializedGraphElementStringTypeVids;
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
 import com.intel.hadoop.graphbuilder.graphelements.Vertex;
 import com.intel.hadoop.graphbuilder.types.StringType;
 import com.intel.pig.data.PropertyGraphElementTuple;
 
 public class TestRDF {
-	EvalFunc<?> toRdfUdf;
+    EvalFunc<?> toRdfUdf;
 
-	@Before
-	public void setup() throws Exception {
-		System.out.println("*** Starting RDF tests. ***");
-		toRdfUdf = (EvalFunc<?>) PigContext
-				.instantiateFuncFromSpec("com.intel.pig.udf.eval.RDF('OWL')");
-	}
+    @Before
+    public void setup() throws Exception {
+        toRdfUdf = (EvalFunc<?>) PigContext.instantiateFuncFromSpec("com.intel.pig.udf.eval.RDF");
+    }
 
-	@Test
-	public void runTests() throws IOException {
-		SerializedGraphElementStringTypeVids serializedGraphElement =
-                new SerializedGraphElementStringTypeVids();
-		Vertex<StringType> vertex = new Vertex<StringType>(new StringType(
-				"test_vertex"));
-		serializedGraphElement.init(vertex);
-		vertex.setProperty("p-1", new StringType("v-1"));
-		vertex.setLabel(new StringType("vertex_label"));
+    @Test
+    public void runTests() throws IOException {
+        SerializedGraphElementStringTypeVids serializedGraphElement = new SerializedGraphElementStringTypeVids();
+        Vertex<StringType> vertex = new Vertex<StringType>(new StringType("test_vertex"));
+        serializedGraphElement.init(vertex);
+        vertex.setProperty("p-1", new StringType("v-1"));
+        vertex.setLabel(new StringType("vertex_label"));
 
-		PropertyGraphElementTuple t = new PropertyGraphElementTuple(1);
-		t.set(0, serializedGraphElement);
+        PropertyGraphElementTuple t = new PropertyGraphElementTuple(1);
+        t.set(0, serializedGraphElement);
 
-		DataBag result = (DataBag) toRdfUdf.exec(t);
-		assertEquals("Returned bag size should have been 2", result.size(), 2);
-		Iterator<Tuple> iter = result.iterator();
+        DataBag result = (DataBag) toRdfUdf.exec(t);
+        assertEquals("Returned bag size should have been 2", result.size(), 2);
+        Iterator<Tuple> iter = result.iterator();
 
-		while (iter.hasNext()) {
-			Tuple resultTuple = iter.next();
-			String rdfStatement = (String) resultTuple.get(0);
+        while (iter.hasNext()) {
+            Tuple resultTuple = iter.next();
+            String rdfStatement = (String) resultTuple.get(0);
             if (rdfStatement.contains("rdf-syntax-ns#type")) {
-    			assertEquals(
-	    				"RDF statement mismatch",
-		    			rdfStatement,
-			    		"http://www.w3.org/2002/07/owl#test_vertex " +
-                        "http://www.w3.org/1999/02/22-rdf-syntax-ns#type " +
-                        "vertex_label .");
+                assertEquals("RDF statement mismatch", rdfStatement, "http://www.w3.org/2002/07/owl#test_vertex "
+                        + "http://www.w3.org/1999/02/22-rdf-syntax-ns#type " + "vertex_label .");
             } else {
-                assertEquals(
-	    				"RDF statement mismatch",
-		    			rdfStatement,
-			    		"http://www.w3.org/2002/07/owl#test_vertex " +
-                        "http://www.w3.org/2002/07/owl#p-1 \"v-1\" .");
+                assertEquals("RDF statement mismatch", rdfStatement, "http://www.w3.org/2002/07/owl#test_vertex "
+                        + "http://www.w3.org/2002/07/owl#p-1 \"v-1\" .");
             }
-		}
+        }
 
-		serializedGraphElement = new SerializedGraphElementStringTypeVids();
-		Edge<StringType> edge = new Edge<StringType>(new StringType("src"),
-				new StringType("target"), new StringType("edge_label"));
+        serializedGraphElement = new SerializedGraphElementStringTypeVids();
+        Edge<StringType> edge = new Edge<StringType>(new StringType("src"), new StringType("target"),
+                new StringType("edge_label"));
 
-		serializedGraphElement.init(edge);
-		edge.setProperty("p-1", new StringType("v-1"));
+        serializedGraphElement.init(edge);
+        edge.setProperty("p-1", new StringType("v-1"));
 
-		t = new PropertyGraphElementTuple(1);
-		t.set(0, serializedGraphElement);
+        t = new PropertyGraphElementTuple(1);
+        t.set(0, serializedGraphElement);
 
-		result = (DataBag) toRdfUdf.exec(t);
-		assertEquals("Returned bag size should have been 1", result.size(), 1);
+        result = (DataBag) toRdfUdf.exec(t);
+        assertEquals("Returned bag size should have been 1", result.size(), 1);
 
-		iter = result.iterator();
-		while (iter.hasNext()) {
-			Tuple resultTuple = iter.next();
-			String rdfStatement = (String) resultTuple.get(0);
-            assertEquals(
-                    "RDF statement mismatch",
-                    rdfStatement,
-                    "http://www.w3.org/2002/07/owl#src " +
-                    "http://www.w3.org/2002/07/owl#edge_label " +
-                    "http://www.w3.org/2002/07/owl#target .");
-		}
+        iter = result.iterator();
+        while (iter.hasNext()) {
+            Tuple resultTuple = iter.next();
+            String rdfStatement = (String) resultTuple.get(0);
+            assertEquals("RDF statement mismatch", rdfStatement, "http://www.w3.org/2002/07/owl#src "
+                    + "http://www.w3.org/2002/07/owl#edge_label " + "http://www.w3.org/2002/07/owl#target .");
+        }
 
-		/* test with a null graph element */
-		serializedGraphElement = new SerializedGraphElementStringTypeVids();
-		serializedGraphElement.init(null);
-		t = new PropertyGraphElementTuple(1);
-		t.set(0, serializedGraphElement);
-		result = (DataBag) toRdfUdf.exec(t);
+        /* test with a null graph element */
+        serializedGraphElement = new SerializedGraphElementStringTypeVids();
+        serializedGraphElement.init(null);
+        t = new PropertyGraphElementTuple(1);
+        t.set(0, serializedGraphElement);
+        result = (DataBag) toRdfUdf.exec(t);
 
         assertNull(result);
-	}
-
-	@After
-	public void done() {
-		System.out.println("*** Done with the RDF tests ***");
-	}
-
+    }
 }

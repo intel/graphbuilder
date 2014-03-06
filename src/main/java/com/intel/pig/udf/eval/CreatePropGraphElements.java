@@ -1,4 +1,5 @@
 /* Copyright (C) 2013 Intel Corporation.
+ * Copyright (C) 2014 YarcData LLC
  *     All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,7 +54,7 @@ import java.util.concurrent.TimeUnit;
  * REGISTER target/graphbuilder-2.0-alpha-with-deps.jar;
  * x = LOAD 'examples/data/employees.csv' USING PigStorage(',') AS (id: int, name: chararray, age: int, dept: chararray, manager: int, tenure: chararray);
  * 
- * DEFINE CreatePropertyGraph com.intel.pig.udf.eval.CreatePropGraphElements('-v "name=age,managerId" -e "name,dept,worksAt,tenure"');
+ * DEFINE CreatePropertyGraph com.intel.pig.udf.eval.CreatePropGraphElements();
  * pge = FOREACH x GENERATE flatten(CreatePropGraphElements(*, [ 'vertices' # [ 'id' # 'id', 'properties' # ( 'name', 'dept', 'age' ) ],
  *                                                               'edges' # [ 'source' # 'id', 'target' # 'manager', 'label' # 'hasManager', 'inverseLabel' # 'manages' ] ]
  *                                                         ));
@@ -61,9 +62,6 @@ import java.util.concurrent.TimeUnit;
  */
 @MonitoredUDF(errorCallback = GBUdfExceptionHandler.class, duration = 30, timeUnit = TimeUnit.MINUTES)
 public class CreatePropGraphElements extends EvalFunc<DataBag> {
-    // TODO What does this actually do?
-    @SuppressWarnings("unused")
-    private boolean flattenLists = false;
 
     /**
      * exec - the workhorse for the CreatePropGraphElements UDF
