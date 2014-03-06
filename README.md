@@ -1,10 +1,10 @@
-Intel(R) Graph Builder 2.0 (alpha) 
-----------------------------------
+# Intel(R) Graph Builder 2.0 (alpha) 
 
 Intel Graph Builder 2.0 (alpha) is a library of user defined functions (UDFs) and
 macros in Pig Latin used to construct graphs in Hadoop&trade;. The 2.0 (alpha) version
 supports multi-relational graphs, or property graphs, in which both objects
 and relationships may be labeled with multiple properties and property values.
+
 Graphs can be constructed from structured, semi-structured,
 or unstructured data. In the case of structured data, columns of HBase tables or
 fields in CSV/TSV files for example can be annotated as objects,
@@ -15,40 +15,46 @@ matches from a JSON string and a RegexExtractAllMatches utility which extracts a
 text matches in a string. Once a graph is constructed, use the deduplication macro to merge duplicate elements.
 These capabilities can easily be extended by writing your own custom user defined function.
 
-Of course, there’s no point in building a graph if you can’t query,
+Of course, there's no point in building a graph if you can't query,
 analyze or visualize it. So, we have introduced new bulk load and export
-methods. The LOAD_TITAN macro bulk loads the open source Titan distributed
+methods. The `LOAD_TITAN` macro bulk loads the open source [Titan][1] distributed
 graph database through the Blueprints API so that you can explore the graphs
-using the Gremlin query language. In addition, we have extended Graph Builder
-to support the Resource Description Framework (RDF) export format. We use the
-Apache Jena library to form RDF triples for property graph elements.
-We only export graphs in the N-TRIPLES format. All the Jena RDF
-namespaces are accepted. Last, but not least this version of the Graph
-Builder library can also export simple edge (object) lists and vertex
-(relationship) lists. You can use graph visualization tools such as Gephi with
+using the Gremlin query language.
+
+In addition, we have extended Graph Builder to support the Resource Description Framework 
+(RDF) export format. We use the [Apache Jena][2] library to form RDF triples for property 
+graph elements, RDF graphs are exported in the N-TRIPLES format.
+
+Last, but not least this version of the Graph Builder library can also export simple edge
+(object) lists and vertex (relationship) lists. You can use graph visualization tools such as Gephi with
 the edge list exports.
 
-How to compile the Graph Builder Library?
--------------------------------
-Intel Graph Builder uses Apache Maven v3.1.1 as the build manager. Please
-ensure Maven3 is installed in your system.
+[1]: http://thinkaurelius.github.io/titan/
+[2]: http://jena.apache.org
+
+## Building
+
+Intel Graph Builder uses Apache Maven 3 as the build manager. Please ensure Maven 3 is installed in your system.
 To build the library without running the unit tests:
 
-`mvn clean package -DskipTests`
+    mvn clean package -DskipTests
 
 To build the library and run the unit tests:
 
-`mvn clean package`
+    mvn clean package
 
 To install Graph Builder:
 
-`mvn clean install`
+    mvn clean install
 
-How to use the Graph Builder Library?
--------------------------------------
+### Dependencies
 
-Please refer to the Pig scripts provided in the examples directory to run
-the different use cases of Graph Builder. The wikipedia_example.pig script
+Please use Titan version 0.4.1 to execute Gremlin queries.
+
+## Using Graph Builder
+
+Please refer to the Pig scripts provided in the *examples/* directory to run
+the different use cases of Graph Builder. The **wikipedia_example.pig** script
 constructs a bipartite Link-Page graph from Wikipedia dataset (XML format).
 You can download the Wiki page dump containing pages in English language
 from the following location:
@@ -65,74 +71,65 @@ We have also provided some toy data to demonstrate the functionality
 of the UDF and macros provided in this distribution. They are in the
 examples/data directory. Please see the Known Issues if you hit any problems.                           
 
-Where will I get the documentation for Graph Builder 2.0?
----------------------------------------------------------
+## Documentation
 
-You can find the HTML documentation under docs/html directory.
+You can find the HTML documentation under *docs/html* directory.
 
-Release Notes
--------------
+## Release Notes
 
 Added the following UDFs and macros:
 
-+ Added the following UDFs and macros:
-  - CreatePropGraphElements
-  - ExtractJSONField
-  - GetPropGraphElementID
-  - MergeDuplicateGraphElements
-  - RDF
-  - VertexList
-  - EdgeList
-  - RegexExtractAllMatches  
-  - CreateRowKey
-  - MERGE\_DUPLICATE\_ELEMENTS
-  - LOAD\_TITAN
-+ Added the TableToTitanGraph MapReduce application to bulk load property graphs
-  from HBase Tables to the open source Titan graph database
+- Added the following UDFs and macros:
+    - CreatePropGraphElements
+    - ExtractJSONField
+    - GetPropGraphElementID
+    - MergeDuplicateGraphElements
+    - RDF
+    - VertexList
+    - EdgeList
+    - RegexExtractAllMatches  
+    - CreateRowKey
+    - `MERGE_DUPLICATE_ELEMENTS`
+    - `LOAD_TITAN`
+- Added the `TableToTitanGraph` MapReduce application to bulk load property graphs from HBase Tables to the open source Titan graph database
 - Removed ID normalization and partitioning
 - Removed the wordpage graph and the linkgraph tokenizer from the demoapps
 
-Configuration & Tuning
-------------------------
+## Configuration & Tuning
 
-##### Setting the Hadoop classpath 
+### Setting the Hadoop classpath 
 
 To use the Intel Graph Builder library,
-please set the $HADOOP_CLASSPATH as follows:
+please set the `HADOOP_CLASSPATH` as follows:
 
-`export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:$GRAPHBUILDER_HOME/target/graphbuilder-2.0-alpha-with-deps.jar`
+    export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:$GRAPHBUILDER_HOME/target/graphbuilder-2.0-alpha-with-deps.jar
 
-##### Tuning
+### Tuning
 
 Hadoop, HBase, and Titan must be tuned carefully to successfully create large
 graphs (in the order of hundreds of million vertices/edges such as the Wikipedia dataset). Please refer to
 [https://github.com/thinkaurelius/titan/wiki/Bulk-Loading](https://github.com/thinkaurelius/titan/wiki/Bulk-Loading) for tuning Titan. In particular,
 we recommend tuning the following parameters:
 
-- graphbuilder.titan.ids.block-size
-- graphbuilder.titan.ids.partition
-- graphbuilder.titan.ids.num-partitions
-- graphbuilder.titan.storage.idauthority-wait-time
-- graphbuilder.titan.ids.renew-timeout
-- graphbuilder.titan.ids.idauthority-retries
-- storage.buffer-size
-- graphbuilder.titan.storage.attempt-wait
-- graphbuilder.titan.storage.write-attempts
-- graphbuilder.titan.storage.batch-loading
+- `graphbuilder.titan.ids.block-size`
+- `graphbuilder.titan.ids.partition`
+- `graphbuilder.titan.ids.num-partitions`
+- `graphbuilder.titan.storage.idauthority-wait-time`
+- `graphbuilder.titan.ids.renew-timeout`
+- `graphbuilder.titan.ids.idauthority-retries`
+- `storage.buffer-size`
+- `graphbuilder.titan.storage.attempt-wait`
+- `graphbuilder.titan.storage.write-attempts`
+- `graphbuilder.titan.storage.batch-loading`
 
-During bulk loading Titan we recommend to disable the tx cache by setting graphbuilder.titan.tx-cache-size to 0
-and we recommend setting Hadoop's mapred.reduce.tasks and mapred.task.timeout parameters.
+During bulk loading Titan we recommend to disable the tx cache by setting `graphbuilder.titan.tx-cache-size` to `0`
+and we recommend setting Hadoop's `mapred.reduce.tasks` and `mapred.task.timeout` parameters.
 
 For the HBase configuration, we recommend tuning the following parameters:
 
-- hbase.zookeeper.property.maxClientCnxns
-- zookeeper.session.timeout
-- hbase.hregion.max.filesize
-- hbase.regionserver.handler.count
-- hbase.rpc.timeout
-- hbase.client.write.buffer
-
-Dependencies
-------------
-
-Please use Titan version 0.4.1 to execute Gremlin queries.
+- `hbase.zookeeper.property.maxClientCnxns`
+- `zookeeper.session.timeout`
+- `hbase.hregion.max.filesize`
+- `hbase.regionserver.handler.count`
+- `hbase.rpc.timeout`
+- `hbase.client.write.buffer`
