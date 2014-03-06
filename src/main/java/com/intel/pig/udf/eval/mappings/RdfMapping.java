@@ -587,7 +587,7 @@ public class RdfMapping extends AbstractMapping {
     }
 
     @Override
-    public Map<String, Object> toMap() {
+    public Map<String, Object> toMap() throws ExecException {
         Map<String, Object> mapping = new HashMap<String, Object>();
         if (this.baseUri != null)
             mapping.put(BASE_URI, this.baseUri);
@@ -599,9 +599,9 @@ public class RdfMapping extends AbstractMapping {
         if (this.namespaces.size() > 0)
             mapping.put(NAMESPACES, this.namespaces);
         if (this.includedProperties.size() > 0)
-            mapping.put(INCLUDED_PROPERTIES, TupleFactory.getInstance().newTuple(this.includedProperties));
+            mapping.put(INCLUDED_PROPERTIES, this.setToTuple(this.includedProperties));
         if (this.excludedProperties.size() > 0)
-            mapping.put(EXCLUDED_PROPERTIES, TupleFactory.getInstance().newTuple(this.excludedProperties));
+            mapping.put(EXCLUDED_PROPERTIES, this.setToTuple(this.excludedProperties));
         if (this.propertyMap.size() > 0)
             mapping.put(PROPERTY_MAP, this.propertyMap);
         return mapping;

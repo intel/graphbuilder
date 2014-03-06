@@ -27,11 +27,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
 
 import com.intel.hadoop.graphbuilder.types.DoubleType;
 import com.intel.hadoop.graphbuilder.types.FloatType;
@@ -54,8 +56,9 @@ public abstract class AbstractMapping {
      * Converts the mapping back into a map that Pig can serialize
      * 
      * @return Map
+     * @throws ExecException 
      */
-    public abstract Map<String, Object> toMap();
+    public abstract Map<String, Object> toMap() throws ExecException;
 
     /**
      * Extracts the string value for a given key from the given map
@@ -267,6 +270,17 @@ public abstract class AbstractMapping {
 
         builder.append(']');
         return builder.toString();
+    }
+    
+    protected <T> Tuple setToTuple(Set<T> set) throws ExecException {
+        Tuple t = TupleFactory.getInstance().newTuple(set.size());
+        int i = 0;
+        Iterator<T> items = set.iterator();
+        while (items.hasNext()) {
+            t.set(i, items.next());
+            i++;
+        }
+        return t;
     }
 
     protected String getStringValue(Tuple tuple, Integer field) throws ExecException {

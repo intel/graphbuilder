@@ -47,14 +47,16 @@ guarantees that this code will be supported in any way, shape or form moving for
 
 ## Building
 
-Intel Graph Builder uses Apache Maven 3 as the build manager. Please ensure Maven 3 is installed in your system.
-To build the library without running the unit tests:
-
-    mvn clean package -DskipTests
+Intel Graph Builder is Java based and uses Apache Maven 3 as the build manager and targets Java 7. Please ensure Maven 3 
+and Java 7 are installed io your system.
 
 To build the library and run the unit tests:
 
     mvn clean package
+    
+To build the library without running the unit tests:
+
+    mvn clean package -DskipTests
 
 To install Graph Builder:
 

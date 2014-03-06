@@ -78,10 +78,6 @@ public class CreatePropGraphElements extends EvalFunc<DataBag> {
      */
     @Override
     public DataBag exec(Tuple input) throws IOException {
-        // TODO Would be good to cope with the case where we get the tuple
-        // directly as well as the case where it gets nested in another tuple as
-        // the current code covers
-
         if (input == null || input.size() == 0)
             return null;
 

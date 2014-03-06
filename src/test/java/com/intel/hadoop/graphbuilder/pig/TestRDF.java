@@ -1,4 +1,5 @@
 /* Copyright (C) 2013 Intel Corporation.
+ * Copyright 2014 YarcData LLC
  *     All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,89 +19,188 @@
  */
 package com.intel.hadoop.graphbuilder.pig;
 
-import static junit.framework.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
+import net.fortytwo.linkeddata.RDFUtils;
+
+import org.apache.jena.atlas.lib.ArrayUtils;
 import org.apache.pig.EvalFunc;
+import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
+import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.PigContext;
-import org.junit.After;
+import org.apache.pig.impl.logicalLayer.schema.Schema;
+import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.intel.hadoop.graphbuilder.graphelements.Edge;
-import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElementStringTypeVids;
-import com.intel.hadoop.graphbuilder.graphelements.Vertex;
-import com.intel.hadoop.graphbuilder.types.StringType;
-import com.intel.pig.data.PropertyGraphElementTuple;
+import com.hp.hpl.jena.sparql.vocabulary.FOAF;
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
+import com.intel.pig.udf.eval.RDF;
+import com.intel.pig.udf.eval.mappings.RdfMapping;
 
-public class TestRDF {
+/**
+ * Tests for the {@link RDF} UDF
+ * 
+ */
+public class TestRDF extends TestCreatePropGraphElements {
     EvalFunc<?> toRdfUdf;
 
     @Before
     public void setup() throws Exception {
+        super.setup();
         toRdfUdf = (EvalFunc<?>) PigContext.instantiateFuncFromSpec("com.intel.pig.udf.eval.RDF");
     }
 
-    @Test
-    public void runTests() throws IOException {
-        SerializedGraphElementStringTypeVids serializedGraphElement = new SerializedGraphElementStringTypeVids();
-        Vertex<StringType> vertex = new Vertex<StringType>(new StringType("test_vertex"));
-        serializedGraphElement.init(vertex);
-        vertex.setProperty("p-1", new StringType("v-1"));
-        vertex.setLabel(new StringType("vertex_label"));
+    private Schema prepareRdfSchema(Schema baseSchema) {
+        List<FieldSchema> fields = new ArrayList<>();
+        fields.addAll(baseSchema.getFields());
+        FieldSchema mappingField = new Schema.FieldSchema(null, DataType.MAP);
+        fields.add(mappingField);
 
-        PropertyGraphElementTuple t = new PropertyGraphElementTuple(1);
-        t.set(0, serializedGraphElement);
+        return new Schema(fields);
+    }
 
+    private List<Tuple> checkRdfResults(Tuple t, int expectedTriples, String[] expectedTripleData) throws IOException {
         DataBag result = (DataBag) toRdfUdf.exec(t);
-        assertEquals("Returned bag size should have been 2", result.size(), 2);
+        List<Tuple> ts = new ArrayList<Tuple>();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(expectedTriples, result.size());
+
+        if (expectedTripleData.length < expectedTriples)
+            Assert.fail("Insufficient expected triple data provided");
+
         Iterator<Tuple> iter = result.iterator();
-
+        int i = 0;
         while (iter.hasNext()) {
-            Tuple resultTuple = iter.next();
-            String rdfStatement = (String) resultTuple.get(0);
-            if (rdfStatement.contains("rdf-syntax-ns#type")) {
-                assertEquals("RDF statement mismatch", rdfStatement, "http://www.w3.org/2002/07/owl#test_vertex "
-                        + "http://www.w3.org/1999/02/22-rdf-syntax-ns#type " + "vertex_label .");
-            } else {
-                assertEquals("RDF statement mismatch", rdfStatement, "http://www.w3.org/2002/07/owl#test_vertex "
-                        + "http://www.w3.org/2002/07/owl#p-1 \"v-1\" .");
-            }
+            Tuple tuple = iter.next();
+            ts.add(tuple);
+            String expected = expectedTripleData[i];
+
+            // Check size of tuple
+            Assert.assertEquals(1, tuple.size());
+            String actual = (String) tuple.get(0);
+            Assert.assertEquals(expected, actual);
+
+            i++;
         }
 
-        serializedGraphElement = new SerializedGraphElementStringTypeVids();
-        Edge<StringType> edge = new Edge<StringType>(new StringType("src"), new StringType("target"),
-                new StringType("edge_label"));
+        return ts;
+    }
 
-        serializedGraphElement.init(edge);
-        edge.setProperty("p-1", new StringType("v-1"));
+    @Test
+    public void indirect_rdf_tuple_01() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
 
-        t = new PropertyGraphElementTuple(1);
-        t.set(0, serializedGraphElement);
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
 
-        result = (DataBag) toRdfUdf.exec(t);
-        assertEquals("Returned bag size should have been 1", result.size(), 1);
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
 
-        iter = result.iterator();
-        while (iter.hasNext()) {
-            Tuple resultTuple = iter.next();
-            String rdfStatement = (String) resultTuple.get(0);
-            assertEquals("RDF statement mismatch", rdfStatement, "http://www.w3.org/2002/07/owl#src "
-                    + "http://www.w3.org/2002/07/owl#edge_label " + "http://www.w3.org/2002/07/owl#target .");
-        }
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
 
-        /* test with a null graph element */
-        serializedGraphElement = new SerializedGraphElementStringTypeVids();
-        serializedGraphElement.init(null);
-        t = new PropertyGraphElementTuple(1);
-        t.set(0, serializedGraphElement);
-        result = (DataBag) toRdfUdf.exec(t);
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
+                new HashMap<String, String>(), true, Arrays.asList("age"), new ArrayList<String>(),
+                new HashMap<String, String>(), null);
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
 
-        assertNull(result);
+        // Convert to RDF and check
+        this.checkRdfResults(rdfInputTuple, 1,
+                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://example.org/age> 33 ." });
+    }
+
+    @Test
+    public void indirect_rdf_tuple_02() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        Map<String, String> propertyMappings = new HashMap<String, String>();
+        propertyMappings.put("age", "foaf:age");
+        Map<String, String> namespaces = new HashMap<String, String>();
+        namespaces.put("foaf", FOAF.NS);
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#", namespaces, true,
+                Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null);
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(rdfInputTuple, 1,
+                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
+    }
+    
+    @Test
+    public void indirect_rdf_tuple_03() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        Map<String, String> propertyMappings = new HashMap<String, String>();
+        propertyMappings.put("age", "foaf:age");
+        propertyMappings.put("name", "foaf:name");
+        Map<String, String> namespaces = new HashMap<String, String>();
+        namespaces.put("foaf", FOAF.NS);
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#", namespaces, true,
+                Arrays.asList("age"), new ArrayList<String>(), propertyMappings, "name");
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(rdfInputTuple, 1,
+                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
     }
 }

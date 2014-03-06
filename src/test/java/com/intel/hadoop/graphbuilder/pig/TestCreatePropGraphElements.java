@@ -61,7 +61,7 @@ public class TestCreatePropGraphElements {
                 "com.intel.pig.udf.eval.CreatePropGraphElements"));
     }
 
-    private Schema prepareSchema() {
+    protected Schema prepareSchema() {
         Schema.FieldSchema idField = new Schema.FieldSchema("id", DataType.INTEGER);
         Schema.FieldSchema nameField = new Schema.FieldSchema("name", DataType.CHARARRAY);
         Schema.FieldSchema ageField = new Schema.FieldSchema("age", DataType.INTEGER);
@@ -75,11 +75,11 @@ public class TestCreatePropGraphElements {
         return new Schema(fsList);
     }
 
-    private List<String> prepareVertexMappingProperties() {
+    protected List<String> prepareVertexMappingProperties() {
         return this.prepareVertexMappingProperties(new String[] { "age", "managerId", "department", "tenure" });
     }
 
-    private List<String> prepareVertexMappingProperties(String[] properties) {
+    protected List<String> prepareVertexMappingProperties(String[] properties) {
         List<String> ps = new ArrayList<>();
         for (String p : properties) {
             ps.add(p);
@@ -87,24 +87,24 @@ public class TestCreatePropGraphElements {
         return ps;
     }
 
-    private Map<String, Object> prepareVertexMapping() {
+    protected Map<String, Object> prepareVertexMapping() {
         return this.prepareVertexMapping(this.prepareVertexMappingProperties());
     }
 
-    private Map<String, Object> prepareVertexMapping(List<String> properties) {
+    protected Map<String, Object> prepareVertexMapping(List<String> properties) {
         Map<String, Object> vertexMapping = new HashMap<String, Object>();
         vertexMapping.put("id", "name");
         vertexMapping.put("properties", TupleFactory.getInstance().newTuple(properties));
         return vertexMapping;
     }
 
-    private Map<String, Object> prepareMapping() {
+    protected Map<String, Object> prepareMapping() {
         List<Map<String, Object>> vertexMappings = new ArrayList<Map<String, Object>>();
         vertexMappings.add(this.prepareVertexMapping());
         return this.prepareMappings(vertexMappings, new ArrayList<Map<String, Object>>());
     }
 
-    private Map<String, Object> prepareMappings(List<Map<String, Object>> vertexMappings, List<Map<String, Object>> edgeMappings) {
+    protected Map<String, Object> prepareMappings(List<Map<String, Object>> vertexMappings, List<Map<String, Object>> edgeMappings) {
         Map<String, Object> mapping = new HashMap<String, Object>();
 
         mapping.put("vertices", TupleFactory.getInstance().newTuple(vertexMappings));
@@ -112,11 +112,11 @@ public class TestCreatePropGraphElements {
         return mapping;
     }
 
-    private Tuple prepareData() throws ExecException {
+    protected Tuple prepareData() throws ExecException {
         return this.prepareData(this.prepareMapping());
     }
 
-    private Tuple prepareData(Map<String, Object> mapping) throws ExecException {
+    protected Tuple prepareData(Map<String, Object> mapping) throws ExecException {
         Tuple t = TupleFactory.getInstance().newTuple(7);
 
         Integer id = 1;
@@ -137,9 +137,10 @@ public class TestCreatePropGraphElements {
         return t;
     }
 
-    private void checkResults(Tuple t, int expectedTuples, int[] expectedProperties) throws IOException {
+    protected List<Tuple> checkResults(Tuple t, int expectedTuples, int[] expectedProperties) throws IOException {
         DataBag result = (DataBag) createPropGraphElementsUDF.exec(t);
-
+        List<Tuple> ts = new ArrayList<Tuple>();
+        
         Assert.assertEquals(expectedTuples, result.size());
 
         if (expectedProperties.length < expectedTuples)
@@ -149,16 +150,20 @@ public class TestCreatePropGraphElements {
         int i = 0;
         while (iter.hasNext()) {
             Tuple tuple = iter.next();
+            ts.add(tuple);
             int expected = expectedProperties[i];
 
             // Check size of tuple and the contained graph element
             Assert.assertEquals(1, tuple.size());
             SerializedGraphElement<?> element = (SerializedGraphElement<?>) tuple.get(0);
+            //System.out.println(element.toString());
             Assert.assertNotNull(element.graphElement());
             Assert.assertEquals(expected, element.graphElement().getProperties().size());
 
             i++;
         }
+        
+        return ts;
     }
 
     @Test
