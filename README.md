@@ -1,18 +1,20 @@
 # Intel(R) Graph Builder 2.0 (alpha) 
 
 Intel Graph Builder 2.0 (alpha) is a library of user defined functions (UDFs) and
-macros in Pig Latin used to construct graphs in Hadoop&trade;. The 2.0 (alpha) version
+macros in Pig Latin used to construct graphs in Hadoop. The 2.0 (alpha) version
 supports multi-relational graphs, or property graphs, in which both objects
 and relationships may be labeled with multiple properties and property values.
 
 Graphs can be constructed from structured, semi-structured,
 or unstructured data. In the case of structured data, columns of HBase tables or
 fields in CSV/TSV files for example can be annotated as objects,
-relationships, or their properties. To do the same from nested XML and JSON we
-have provided an improved XMLLoader function (available in the Apache Piggy Bank
-repository) to parse XML files, an ExtractJSONField UDF to extract JSON Path
-matches from a JSON string and a RegexExtractAllMatches utility which extracts all
-text matches in a string. Once a graph is constructed, use the deduplication macro to merge duplicate elements.
+relationships, or their properties.
+
+To do the same from nested XML and JSON we
+have provided an improved `XMLLoader` function (available in the Apache Piggy Bank
+repository) to parse XML files, an `ExtractJSONField` UDF to extract JSON Path
+matches from a JSON string and a `RegexExtractAllMatches` utility which extracts all
+text matches in a string. Once a graph is constructed, use the de-duplication macro to merge duplicate elements.
 These capabilities can easily be extended by writing your own custom user defined function.
 
 Of course, there's no point in building a graph if you can't query,
@@ -23,7 +25,7 @@ using the Gremlin query language.
 
 In addition, we have extended Graph Builder to support the Resource Description Framework 
 (RDF) export format. We use the [Apache Jena][2] library to form RDF triples for property 
-graph elements, RDF graphs are exported in the N-TRIPLES format.
+graph elements, RDF graphs are exported in the [NTriples][3] format.
 
 Last, but not least this version of the Graph Builder library can also export simple edge
 (object) lists and vertex (relationship) lists. You can use graph visualization tools such as Gephi with
@@ -31,6 +33,17 @@ the edge list exports.
 
 [1]: http://thinkaurelius.github.io/titan/
 [2]: http://jena.apache.org
+[3]: http://www.w3.org/TR/n-triples/
+
+## License
+
+Graph Builder is licensed under the Apache License 2.0
+
+## Disclaimer
+
+This repository represents an experimental fork of the original Intel code developed internally at Cray, while we hope
+to feed out changes back into the upstream repository we make no guarantees that this will happen.  Cray also makes no
+guarantees that this code will be supported in any way, shape or form moving forwards.
 
 ## Building
 
@@ -54,7 +67,11 @@ Please use Titan version 0.4.1 to execute Gremlin queries.
 ## Using Graph Builder
 
 Please refer to the Pig scripts provided in the *examples/* directory to run
-the different use cases of Graph Builder. The **wikipedia_example.pig** script
+the different use cases of Graph Builder.
+
+### Wikipedia Example
+
+The **wikipedia_example.pig** script
 constructs a bipartite Link-Page graph from Wikipedia dataset (XML format).
 You can download the Wiki page dump containing pages in English language
 from the following location:
@@ -69,7 +86,18 @@ from:
 
 We have also provided some toy data to demonstrate the functionality
 of the UDF and macros provided in this distribution. They are in the
-examples/data directory. Please see the Known Issues if you hit any problems.                           
+examples/data directory. Please see the Known Issues if you hit any problems.
+
+### RDF Example
+
+The **rdf_example.pig** script constructs a simple RDF graph out of an example employee database, it demonstrates the flexible declarative nature of the RDF mapping.
+
+#### RDF generation in Cray vs Intel
+
+The declarative mappings for RDF and Property Graphs are the major difference between Cray's fork of GraphBuilder and Intel's code.  We believe that our declarative mapping approach 
+is significantly easier to write and understand as well as exposing substantially more control over how property graphs and RDF are generated.  It also has the benefit of decoupling the
+generation of property graphs from the generation of RDF graphs to some degree.  While our RDF generation still requires a property graph as input the property graph does not need to care
+about RDF namespaces as in the Intel version.
 
 ## Documentation
 
