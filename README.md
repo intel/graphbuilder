@@ -62,6 +62,12 @@ To install Graph Builder:
 
     mvn clean install
 
+### Build Status
+
+GraphBuilder uses continuous integration provided by [Travis CI](http://travis-ci.org)
+
+[![Build Status](https://travis-ci.org/Cray/graphbuilder.png?branch=2.0.alpha)](https://travis-ci.org/Cray/graphbuilder)
+
 ### Dependencies
 
 Please use Titan version 0.4.1 to execute Gremlin queries.
