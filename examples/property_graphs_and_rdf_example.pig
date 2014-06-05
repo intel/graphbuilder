@@ -18,9 +18,10 @@
  *      http://www.01.org/GraphBuilder
  */
 
- /**
+/**
 * This script should be run from the top level directory
-* Demonstrates how to generate RDF triples from property graph elements
+* Demonstrates how to generate a property graph and then transform that
+* into RDF
 */
 
 REGISTER target/graphbuilder-2.0-alpha-with-deps.jar;
