@@ -65,6 +65,7 @@
 				<version>2.12</version>
 				<configuration>
 					<forkMode>always</forkMode>
+                    <argLine>-XX:-UseSplitVerifier</argLine>
 				</configuration>
 			</plugin>
 

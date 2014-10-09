@@ -416,12 +416,6 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
         titanManagement.buildIndex(TitanConfig.GB_ID_FOR_TITAN, Vertex.class).addKey(gbIdKey);
         titanManagement.commit();
 
-// TODO: Remove dead code
-//        gbIdKey = graph.makeKey(TitanConfig.GB_ID_FOR_TITAN).dataType(String
-//                .class)
-//                .indexed(Vertex.class).unique().make();
-
-
         keyMap.put(TitanConfig.GB_ID_FOR_TITAN, gbIdKey);
 
         List<GBTitanKey> declaredKeys = parseKeyCommandLine(keyCommandLine);
@@ -429,13 +423,8 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
         for (GBTitanKey gbTitanKey : declaredKeys) {
             PropertyKey propertyKey = titanManagement.makePropertyKey(gbTitanKey.getName()).
                                     dataType(gbTitanKey.getDataType()).make();
-            // TODO: Remove dead code
-//            KeyMaker keyMaker = graph.makeKey(gbTitanKey.getName());
-//            keyMaker.dataType(gbTitanKey.getDataType());
 
             if (gbTitanKey.isEdgeIndex()) {
-                // TODO: Remove dead code
-//                keyMaker.indexed(Edge.class);
                 if (gbTitanKey.isUnique()) {
                     titanManagement.buildIndex(gbTitanKey.getName(), Edge.class).addKey(propertyKey).unique();
                 } else {
@@ -444,8 +433,6 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
             }
 
             if (gbTitanKey.isVertexIndex()) {
-                // TODO: Remove dead code
-//                keyMaker.indexed(Vertex.class);
                 if (gbTitanKey.isUnique()) {
                     titanManagement.buildIndex(gbTitanKey.getName(), Vertex.class).addKey(propertyKey).unique();
                 } else {
@@ -453,12 +440,8 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
                 }
             }
 
-            // TODO: Remove dead code
-//            TitanKey titanKey = keyMaker.make();
             titanManagement.commit();
 
-            // TODO: Remove dead code
-//            keyMap.put(titanKey.getName(), titanKey);
             keyMap.put(propertyKey.getName(), propertyKey);
         }
 
@@ -468,9 +451,6 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
         for (String property : propertyNameToTypeMap.keySet()) {
 
             if (!keyMap.containsKey(property)) {
-                // TODO: Remove dead code
-//                TitanKey key = graph.makeKey(property).dataType
-//                        (propertyNameToTypeMap.get(property)).make();
                 PropertyKey propertyKey =
                         titanManagement.makePropertyKey(property).dataType(propertyNameToTypeMap.get(property)).make();
                 titanManagement.commit();
@@ -516,10 +496,6 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
                         .getName()));
             }
 
-            // TODO: Remove dead code
-//            TitanKey[] titanKeyArray = titanKeys.toArray(new
-//                    TitanKey[titanKeys.size()]);
-
             PropertyKey[] titanKeyArray = titanKeys.toArray(new
                     PropertyKey[titanKeys.size()]);
 
@@ -527,9 +503,6 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
                     titanManagement.makeEdgeLabel(edgeSchema.getLabel());
             maker.signature(titanKeyArray);
             titanManagement.commit();
-            // TODO: Remove dead code
-//            graph.makeLabel(edgeSchema.getLabel()).signature(titanKeyArray)
-//                    .make();
         }
 
         graph.commit();
