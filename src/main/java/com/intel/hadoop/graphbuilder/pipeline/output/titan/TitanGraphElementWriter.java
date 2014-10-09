@@ -70,7 +70,7 @@ public class TitanGraphElementWriter extends GraphElementWriter {
      */
 
     public long getVertexId(com.tinkerpop.blueprints.Vertex bpVertex){
-        return ((TitanElement)bpVertex).getID();
+        return ((TitanElement)bpVertex).getLongId();
     }
 
     /**

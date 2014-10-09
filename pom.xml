@@ -153,9 +153,10 @@
 		<hbase.version>0.94.12</hbase.version>
 		<hamcrest.version>1.3</hamcrest.version>
 		<json.path.version>1.8.1</json.path.version>
-		<powermock.version>1.5.1</powermock.version>
+		<powermock.version>1.5.6</powermock.version>
 		<tinkerpop.version>2.4.0</tinkerpop.version>
-		<titan.version>0.4.1</titan.version>
+        <faunus.version>0.4.1</faunus.version>
+		<titan.version>0.5.0</titan.version>
 		<slf4j.version>1.7.5</slf4j.version>
 	</properties>
 
@@ -305,7 +306,7 @@
 		<dependency>
 			<groupId>com.thinkaurelius.faunus</groupId>
 			<artifactId>faunus</artifactId>
-			<version>${titan.version}</version>
+			<version>${faunus.version}</version>
 		</dependency>
 
 		<dependency>
@@ -338,6 +339,11 @@
 			<type>pom</type>
 			<version>2.11.0</version>
 		</dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>1.4.01</version>
+        </dependency>
 	</dependencies>
 
 	<repositories>

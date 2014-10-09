@@ -19,22 +19,23 @@
  */
 package com.intel.hadoop.graphbuilder.pipeline.output.titan;
 
+import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
 import com.intel.hadoop.graphbuilder.pipeline.input.InputConfiguration;
-import com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.keyfunction.SourceVertexKeyFunction;
 import com.intel.hadoop.graphbuilder.pipeline.output.GraphGenerationMRJob;
+import com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.keyfunction.SourceVertexKeyFunction;
 import com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.propertygraphschema.EdgeSchema;
 import com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.propertygraphschema.PropertyGraphSchema;
 import com.intel.hadoop.graphbuilder.pipeline.pipelinemetadata.propertygraphschema.PropertySchema;
 import com.intel.hadoop.graphbuilder.pipeline.tokenizer.GraphBuildingRule;
-import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
 import com.intel.hadoop.graphbuilder.util.*;
 import com.intel.hadoop.graphbuilder.util.Timer;
-import com.thinkaurelius.titan.core.KeyMaker;
+import com.thinkaurelius.titan.core.EdgeLabel;
+import com.thinkaurelius.titan.core.PropertyKey;
 import com.thinkaurelius.titan.core.TitanGraph;
-import com.thinkaurelius.titan.core.TitanKey;
+import com.thinkaurelius.titan.core.schema.TitanManagement;
+import com.thinkaurelius.titan.graphdb.types.StandardRelationTypeMaker;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.hadoop.conf.Configuration;
@@ -399,20 +400,26 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
      * Gets the set of Titan Key definitions from the command line...
      */
 
-    private HashMap<String, TitanKey>
+    private HashMap<String, PropertyKey>
         declareAndCollectKeys(TitanGraph graph, String keyCommandLine) {
 
-        HashMap<String, TitanKey> keyMap = new HashMap<String, TitanKey>();
+        HashMap<String, PropertyKey> keyMap = new HashMap<String, PropertyKey>();
 
-        TitanKey gbIdKey = null;
+        TitanManagement titanManagement = graph.getManagementSystem();
 
         // Because Titan requires combination of vertex names and vertex
         // labels into single strings for unique IDs the unique
         // GB_ID_FOR_TITAN property must be of StringType
 
-        gbIdKey = graph.makeKey(TitanConfig.GB_ID_FOR_TITAN).dataType(String
-                .class)
-                .indexed(Vertex.class).unique().make();
+        PropertyKey gbIdKey = titanManagement.makePropertyKey(TitanConfig.GB_ID_FOR_TITAN).dataType(String
+                .class).make();
+        titanManagement.buildIndex(TitanConfig.GB_ID_FOR_TITAN, Vertex.class).addKey(gbIdKey);
+        titanManagement.commit();
+
+// TODO: Remove dead code
+//        gbIdKey = graph.makeKey(TitanConfig.GB_ID_FOR_TITAN).dataType(String
+//                .class)
+//                .indexed(Vertex.class).unique().make();
 
 
         keyMap.put(TitanConfig.GB_ID_FOR_TITAN, gbIdKey);
@@ -420,24 +427,39 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
         List<GBTitanKey> declaredKeys = parseKeyCommandLine(keyCommandLine);
 
         for (GBTitanKey gbTitanKey : declaredKeys) {
-            KeyMaker keyMaker = graph.makeKey(gbTitanKey.getName());
-            keyMaker.dataType(gbTitanKey.getDataType());
+            PropertyKey propertyKey = titanManagement.makePropertyKey(gbTitanKey.getName()).
+                                    dataType(gbTitanKey.getDataType()).make();
+            // TODO: Remove dead code
+//            KeyMaker keyMaker = graph.makeKey(gbTitanKey.getName());
+//            keyMaker.dataType(gbTitanKey.getDataType());
 
             if (gbTitanKey.isEdgeIndex()) {
-                keyMaker.indexed(Edge.class);
+                // TODO: Remove dead code
+//                keyMaker.indexed(Edge.class);
+                if (gbTitanKey.isUnique()) {
+                    titanManagement.buildIndex(gbTitanKey.getName(), Edge.class).addKey(propertyKey).unique();
+                } else {
+                    titanManagement.buildIndex(gbTitanKey.getName(), Edge.class).addKey(propertyKey);
+                }
             }
 
             if (gbTitanKey.isVertexIndex()) {
-                keyMaker.indexed(Vertex.class);
+                // TODO: Remove dead code
+//                keyMaker.indexed(Vertex.class);
+                if (gbTitanKey.isUnique()) {
+                    titanManagement.buildIndex(gbTitanKey.getName(), Vertex.class).addKey(propertyKey).unique();
+                } else {
+                    titanManagement.buildIndex(gbTitanKey.getName(), Vertex.class).addKey(propertyKey);
+                }
             }
 
-            if (gbTitanKey.isUnique()) {
-                keyMaker.unique();
-            }
+            // TODO: Remove dead code
+//            TitanKey titanKey = keyMaker.make();
+            titanManagement.commit();
 
-            TitanKey titanKey = keyMaker.make();
-
-            keyMap.put(titanKey.getName(), titanKey);
+            // TODO: Remove dead code
+//            keyMap.put(titanKey.getName(), titanKey);
+            keyMap.put(propertyKey.getName(), propertyKey);
         }
 
         HashMap<String, Class<?>> propertyNameToTypeMap = graphSchema
@@ -446,9 +468,13 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
         for (String property : propertyNameToTypeMap.keySet()) {
 
             if (!keyMap.containsKey(property)) {
-                TitanKey key = graph.makeKey(property).dataType
-                        (propertyNameToTypeMap.get(property)).make();
-                keyMap.put(property, key);
+                // TODO: Remove dead code
+//                TitanKey key = graph.makeKey(property).dataType
+//                        (propertyNameToTypeMap.get(property)).make();
+                PropertyKey propertyKey =
+                        titanManagement.makePropertyKey(property).dataType(propertyNameToTypeMap.get(property)).make();
+                titanManagement.commit();
+                keyMap.put(property, propertyKey);
             }
 
         }
@@ -472,17 +498,17 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
                             "attempting to connect to Titan.",  LOG, e);
         }
 
-        HashMap<String, TitanKey> propertyNamesToTitanKeysMap =
+        HashMap<String, PropertyKey> propertyNamesToTitanKeysMap =
                 declareAndCollectKeys(graph, keyCommandLine);
 
         // now we declare the edge labels
         // one of these days we'll probably want to fully expose all the
         // Titan knobs regarding manyToOne, oneToMany, etc
 
-
+        TitanManagement titanManagement = graph.getManagementSystem();
 
         for (EdgeSchema edgeSchema : graphSchema.getEdgeSchemata())  {
-            ArrayList<TitanKey> titanKeys = new ArrayList<TitanKey>();
+            ArrayList<PropertyKey> titanKeys = new ArrayList<PropertyKey>();
 
             for (PropertySchema propertySchema : edgeSchema
                     .getPropertySchemata() ) {
@@ -490,10 +516,20 @@ public class TitanWriterMRChain extends GraphGenerationMRJob  {
                         .getName()));
             }
 
-            TitanKey[] titanKeyArray = titanKeys.toArray(new
-                    TitanKey[titanKeys.size()]);
-            graph.makeLabel(edgeSchema.getLabel()).signature(titanKeyArray)
-                    .make();
+            // TODO: Remove dead code
+//            TitanKey[] titanKeyArray = titanKeys.toArray(new
+//                    TitanKey[titanKeys.size()]);
+
+            PropertyKey[] titanKeyArray = titanKeys.toArray(new
+                    PropertyKey[titanKeys.size()]);
+
+            StandardRelationTypeMaker maker = (StandardRelationTypeMaker)
+                    titanManagement.makeEdgeLabel(edgeSchema.getLabel());
+            maker.signature(titanKeyArray);
+            titanManagement.commit();
+            // TODO: Remove dead code
+//            graph.makeLabel(edgeSchema.getLabel()).signature(titanKeyArray)
+//                    .make();
         }
 
         graph.commit();
