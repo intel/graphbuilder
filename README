@@ -136,3 +136,5 @@ Dependencies
 ------------
 
 Hadoop-1.2.1, Titan-0.4.1 or upwards, HBase-0.94.12, Pig-0.12.x, SLF4J-1.7.5 and Java-1.7 are required to use the Graph Builder 2.0 (alpha) library.
+
+Please use branch 2.0-alpha-Titan-0.5.0 to run GraphBuilder 2.0 (alpha) with Titan-0.5.0 API
