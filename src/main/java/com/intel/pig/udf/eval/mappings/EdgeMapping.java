@@ -95,7 +95,7 @@ import com.intel.hadoop.graphbuilder.types.StringType;
  * <h4>bidirectional</h4>
  * <p>
  * The {@code bidirectional} key provides a {@code true} or {@code false} value
- * indicating whether the edge is bidrectional or directed. Edges default to
+ * indicating whether the edge is bidirectional or directed. Edges default to
  * being bidirectional if this key is not used.
  * </p>
  */
