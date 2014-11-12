@@ -84,3 +84,4 @@ propertyGraphWithMappings = FOREACH propertyGraph GENERATE (*, [ 'idBase' # 'htt
 rdf_triples = FOREACH propertyGraphWithMappings GENERATE FLATTEN(RDF(*));
 
 -- Write out the output
+STORE rdf_triples INTO '/tmp/rdf_triples' USING PigStorage();
