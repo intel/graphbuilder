@@ -39,6 +39,7 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
+import org.eclipse.jdt.core.dom.ThisExpression;
 
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.NodeFactory;
@@ -76,6 +77,7 @@ import com.intel.hadoop.graphbuilder.types.StringType;
  *   'excludedProperties' # ( 'dob' ),
  *   'propertyMap' # [ 'type' # 'rdf:type', 
  *                     'name' # 'http://xmlns.com/foaf/0.1/name' ],
+ *   'uriProperties' # ( 'parent' ),
  *   'idProperty' # 'ssn' ]
  * </pre>
  * 
@@ -140,6 +142,15 @@ import com.intel.hadoop.graphbuilder.types.StringType;
  * {@code rdf:type} which is a prefixed name while the {@code name} property is
  * mapped to the URI {@code http://xmlns.com/foaf/0.1/name}.
  * </p>
+ * <h4>uriProperties</h4>
+ * <p>
+ * The values of properties on vertices and edges are by default mapped as
+ * literal objects in the resulting RDF triples. In some cases you may have
+ * properties whose values should be treated as URIs by listing them in this
+ * tuple. Properties listed here will have their values mapped to object URIs
+ * using the same Base URI (specified by the {@code base}) used for creating the
+ * property URIs.
+ * </p>
  * <h4>idProperty</h4>
  * <p>
  * The {@code idProperty} key provides a property that will be used to associate
@@ -149,539 +160,545 @@ import com.intel.hadoop.graphbuilder.types.StringType;
  */
 public class RdfMapping extends AbstractMapping {
 
-	protected static final String BASE_URI = "base";
-	protected static final String ID_BASE_URI = "idBase";
-	protected static final String NAMESPACES = "namespaces";
-	protected static final String USE_STD_NAMESPACES = "useStdNamespaces";
-	protected static final String INCLUDED_PROPERTIES = "includedProperties";
-	protected static final String EXCLUDED_PROPERTIES = "excludedProperties";
-	protected static final String PROPERTY_MAP = "propertyMap";
-	protected static final String ID_PROPERTY = "idProperty";
+    protected static final String BASE_URI = "base";
+    protected static final String ID_BASE_URI = "idBase";
+    protected static final String NAMESPACES = "namespaces";
+    protected static final String USE_STD_NAMESPACES = "useStdNamespaces";
+    protected static final String INCLUDED_PROPERTIES = "includedProperties";
+    protected static final String EXCLUDED_PROPERTIES = "excludedProperties";
+    protected static final String PROPERTY_MAP = "propertyMap";
+    protected static final String ID_PROPERTY = "idProperty";
+    protected static final String URI_PROPERTIES = "uriProperties";
 
-	private String baseUri, idBaseUri, idProperty;
-	private Set<String> includedProperties = new HashSet<String>();
-	private Set<String> excludedProperties = new HashSet<String>();
-	private Map<String, String> propertyMap = new HashMap<String, String>();
-	private Map<String, String> namespaces = new HashMap<String, String>();
-	private boolean useStdNamespaces = false;
-	private PrefixMap prefixes;
+    private String baseUri, idBaseUri, idProperty;
+    private Set<String> includedProperties = new HashSet<String>();
+    private Set<String> excludedProperties = new HashSet<String>();
+    private Set<String> uriProperties = new HashSet<String>();
+    private Map<String, String> propertyMap = new HashMap<String, String>();
+    private Map<String, String> namespaces = new HashMap<String, String>();
+    private boolean useStdNamespaces = false;
+    private PrefixMap prefixes;
 
-	/**
-	 * Creates a new RDF Mapping
-	 * 
-	 * @param baseUri
-	 *            Base URI
-	 * @param idBaseUri
-	 *            ID Base URI
-	 * @param namespaces
-	 *            Namespaces
-	 * @param useStdNamespaces
-	 *            Whether to use standard namespaces
-	 * @param includedProperties
-	 *            Included properties
-	 * @param excludedProperties
-	 *            Excluded properties
-	 * @param propertyMap
-	 *            Property Mapping
-	 * @param idProperty
-	 *            ID Property
-	 */
-	public RdfMapping(String baseUri, String idBaseUri,
-			Map<String, String> namespaces, boolean useStdNamespaces,
-			Collection<String> includedProperties,
-			Collection<String> excludedProperties,
-			Map<String, String> propertyMap, String idProperty) {
-		this.baseUri = baseUri;
-		this.idBaseUri = idBaseUri;
-		if (includedProperties != null)
-			this.includedProperties.addAll(includedProperties);
-		if (excludedProperties != null)
-			this.excludedProperties.addAll(excludedProperties);
-		if (propertyMap != null)
-			this.propertyMap.putAll(propertyMap);
-		this.idProperty = idProperty;
+    /**
+     * Creates a new RDF Mapping
+     * 
+     * @param baseUri
+     *            Base URI
+     * @param idBaseUri
+     *            ID Base URI
+     * @param namespaces
+     *            Namespaces
+     * @param useStdNamespaces
+     *            Whether to use standard namespaces
+     * @param includedProperties
+     *            Included properties
+     * @param excludedProperties
+     *            Excluded properties
+     * @param propertyMap
+     *            Property Mapping
+     * @param uriProperties
+     *            Properties whose values should be treated as URIs
+     * @param idProperty
+     *            ID Property
+     */
+    public RdfMapping(String baseUri, String idBaseUri, Map<String, String> namespaces, boolean useStdNamespaces,
+            Collection<String> includedProperties, Collection<String> excludedProperties,
+            Map<String, String> propertyMap, Collection<String> uriProperties, String idProperty) {
+        this.baseUri = baseUri;
+        this.idBaseUri = idBaseUri;
+        if (includedProperties != null)
+            this.includedProperties.addAll(includedProperties);
+        if (excludedProperties != null)
+            this.excludedProperties.addAll(excludedProperties);
+        if (propertyMap != null)
+            this.propertyMap.putAll(propertyMap);
+        if (uriProperties != null)
+            this.uriProperties.addAll(uriProperties);
+        this.idProperty = idProperty;
 
-		// Build the prefix map
-		this.prefixes = this.useStdNamespaces ? PrefixMapFactory
-				.create(PrefixMapping.Standard) : PrefixMapFactory.create();
-		if (namespaces != null) {
-			this.namespaces.putAll(namespaces);
-			this.prefixes.putAll(namespaces);
-		}
-	}
+        // Build the prefix map
+        this.prefixes = this.useStdNamespaces ? PrefixMapFactory.create(PrefixMapping.Standard) : PrefixMapFactory
+                .create();
+        if (namespaces != null) {
+            this.namespaces.putAll(namespaces);
+            this.prefixes.putAll(namespaces);
+        }
+    }
 
-	/**
-	 * Creates a new RDF mapping directly from an Object
-	 * <p>
-	 * This constructor assumes that the passed object comes from the processing
-	 * of a Pig script and thus will be a Map generated from Pig. See the
-	 * documentation for {@link RdfMapping} for details of the map format
-	 * expected.
-	 * <p>
-	 * 
-	 * @param object
-	 * @throws ExecException
-	 */
-	@SuppressWarnings("unchecked")
-	public RdfMapping(Object object) throws ExecException {
-		if (object == null)
-			throw new NullPointerException(
-					"Cannot create an edge mapping from a null object");
-		if (!(object instanceof Map<?, ?>))
-			throw new IllegalArgumentException(
-					"Cannot create an edge mapping from a non-map object");
+    /**
+     * Creates a new RDF mapping directly from an Object
+     * <p>
+     * This constructor assumes that the passed object comes from the processing
+     * of a Pig script and thus will be a Map generated from Pig. See the
+     * documentation for {@link RdfMapping} for details of the map format
+     * expected.
+     * <p>
+     * 
+     * @param object
+     * @throws ExecException
+     */
+    @SuppressWarnings("unchecked")
+    public RdfMapping(Object object) throws ExecException {
+        if (object == null)
+            throw new NullPointerException("Cannot create an edge mapping from a null object");
+        if (!(object instanceof Map<?, ?>))
+            throw new IllegalArgumentException("Cannot create an edge mapping from a non-map object");
 
-		Map<String, Object> rdfMapping = (Map<String, Object>) object;
-		this.baseUri = this.getStringValue(rdfMapping, BASE_URI, false);
-		this.idBaseUri = this.getStringValue(rdfMapping, ID_BASE_URI, false);
-		List<String> includes = this.getListValue(rdfMapping,
-				INCLUDED_PROPERTIES, false);
-		if (includes != null)
-			this.includedProperties.addAll(includes);
-		List<String> excludes = this.getListValue(rdfMapping,
-				EXCLUDED_PROPERTIES, false);
-		if (excludes != null)
-			this.excludedProperties.addAll(excludes);
-		Map<String, String> pmap = this.getTypedMapValue(rdfMapping,
-				PROPERTY_MAP, false);
-		if (pmap != null)
-			this.propertyMap.putAll(pmap);
-		this.idProperty = this.getStringValue(rdfMapping, ID_PROPERTY, false);
+        Map<String, Object> rdfMapping = (Map<String, Object>) object;
+        this.baseUri = this.getStringValue(rdfMapping, BASE_URI, false);
+        this.idBaseUri = this.getStringValue(rdfMapping, ID_BASE_URI, false);
+        List<String> includes = this.getListValue(rdfMapping, INCLUDED_PROPERTIES, false);
+        if (includes != null)
+            this.includedProperties.addAll(includes);
+        List<String> excludes = this.getListValue(rdfMapping, EXCLUDED_PROPERTIES, false);
+        if (excludes != null)
+            this.excludedProperties.addAll(excludes);
+        Map<String, String> pmap = this.getTypedMapValue(rdfMapping, PROPERTY_MAP, false);
+        if (pmap != null)
+            this.propertyMap.putAll(pmap);
+        List<String> uriProperties = this.getListValue(rdfMapping, URI_PROPERTIES, false);
+        if (uriProperties != null)
+            this.uriProperties.addAll(uriProperties);
+        this.idProperty = this.getStringValue(rdfMapping, ID_PROPERTY, false);
 
-		this.useStdNamespaces = this.getBooleanValue(rdfMapping,
-				USE_STD_NAMESPACES, false);
-		this.prefixes = this.useStdNamespaces ? PrefixMapFactory
-				.create(PrefixMapping.Standard) : PrefixMapFactory.create();
-		Map<String, String> namespaces = this.getTypedMapValue(rdfMapping,
-				NAMESPACES, false);
-		if (namespaces != null)
-			this.prefixes.putAll(namespaces);
-	}
+        this.useStdNamespaces = this.getBooleanValue(rdfMapping, USE_STD_NAMESPACES, false);
+        this.prefixes = this.useStdNamespaces ? PrefixMapFactory.create(PrefixMapping.Standard) : PrefixMapFactory
+                .create();
+        Map<String, String> namespaces = this.getTypedMapValue(rdfMapping, NAMESPACES, false);
+        if (namespaces != null)
+            this.prefixes.putAll(namespaces);
+    }
 
-	/**
-	 * Gets the Base URI
-	 * <p>
-	 * This is used as the Base URI to generate property URIs which are not
-	 * otherwise mapped to specific URIs. Property URIs are generated simply by
-	 * prepending this Base URI to the property name.
-	 * </p>
-	 * <p>
-	 * In the event that this is not specified then property URIs are left as
-	 * relative URIs.
-	 * </p>
-	 * 
-	 * @return Base URI
-	 */
-	public String getBaseUri() {
-		return this.baseUri;
-	}
+    /**
+     * Gets the Base URI
+     * <p>
+     * This is used as the Base URI to generate property URIs which are not
+     * otherwise mapped to specific URIs. Property URIs are generated by
+     * resolving the property name as if they were a fragment URI against this
+     * Base URI. Note that the property map may be used to map properties to
+     * specific absolute URIs or to map them to namespace based URIs
+     * </p>
+     * <p>
+     * In the event that this is not specified then property URIs are left as
+     * relative fragment URIs.
+     * </p>
+     * 
+     * @return Base URI
+     */
+    public String getBaseUri() {
+        return this.baseUri;
+    }
 
-	/**
-	 * Gets the ID Base URI
-	 * <p>
-	 * This differs from the {@link #getBaseUri()} in that this is used
-	 * exclusively for prepending to vertex IDs to produce the URIs for
-	 * vertices.
-	 * </p>
-	 * <p>
-	 * In the event that this is not specified then the normal Base URI is used
-	 * instead, if that is also not specified then vertex URIs are left as
-	 * relative URIs.
-	 * <p>
-	 * 
-	 * @return ID Base URI
-	 */
-	public String getIdBaseUri() {
-		return this.idBaseUri;
-	}
+    /**
+     * Gets the ID Base URI
+     * <p>
+     * This differs from the {@link #getBaseUri()} in that this is used
+     * exclusively for prepending to vertex IDs to produce the URIs for
+     * vertices.
+     * </p>
+     * <p>
+     * In the event that this is not specified then the normal Base URI is used
+     * instead, if that is also not specified then vertex URIs are left as
+     * relative URIs.
+     * <p>
+     * 
+     * @return ID Base URI
+     */
+    public String getIdBaseUri() {
+        return this.idBaseUri;
+    }
 
-	/**
-	 * Gets a prefix map containing the available namespace declarations
-	 * <p>
-	 * Depending on whether {@link #usingStandardNamespaces()} is true this may
-	 * be a combination of the user supplied namespaces and the standard
-	 * namespaces
-	 * <p>
-	 * 
-	 * @return Prefix map
-	 */
-	public PrefixMap getNamespaces() {
-		return this.prefixes;
-	}
+    /**
+     * Gets a prefix map containing the available namespace declarations
+     * <p>
+     * Depending on whether {@link #usingStandardNamespaces()} is true this may
+     * be a combination of the user supplied namespaces and the standard
+     * namespaces
+     * <p>
+     * 
+     * @return Prefix map
+     */
+    public PrefixMap getNamespaces() {
+        return this.prefixes;
+    }
 
-	/**
-	 * Gets whether standard namespaces are being used in addition to any user
-	 * defined ones
-	 * <p>
-	 * Standard namespaces are supplied by {@link PrefixMapping#Standard} which
-	 * contains RDF, RDFS, XSD, OWL and DC
-	 * </p>
-	 * 
-	 * @return True if using standard namespaces, false otherwise
-	 */
-	public boolean usingStandardNamespaces() {
-		return this.useStdNamespaces;
-	}
+    /**
+     * Gets whether standard namespaces are being used in addition to any user
+     * defined ones
+     * <p>
+     * Standard namespaces are supplied by {@link PrefixMapping#Standard} which
+     * contains RDF, RDFS, XSD, OWL and DC
+     * </p>
+     * 
+     * @return True if using standard namespaces, false otherwise
+     */
+    public boolean usingStandardNamespaces() {
+        return this.useStdNamespaces;
+    }
 
-	/**
-	 * Gets whether a given property is included in the mapping.
-	 * <p>
-	 * Whether a property is included is determined by checking several
-	 * conditions. Firstly it looks at whether the mapping explicitly
-	 * includes/excludes properties, if it does not then the property is
-	 * included. However if there are explicit includes/excludes then it has to
-	 * inspect these to determine if the property is included. A property must
-	 * be in the includes list (which if empty implicitly includes everything)
-	 * and not also in the exclude list (which if empty is ignored).
-	 * </p>
-	 * 
-	 * @param property
-	 *            Property
-	 * @return True if the property is included in the mapping, false otherwise
-	 */
-	public boolean includesProperty(String property) {
-		if (this.includedProperties.size() == 0
-				&& this.excludedProperties.size() == 0) {
-			return true;
-		} else {
-			if (this.includedProperties.size() > 0) {
-				// Must be included and not excluded
-				if (!this.includedProperties.contains(property)
-						|| this.excludedProperties.contains(property))
-					return false;
-				return true;
-			} else {
-				// Implicitly all properties are included so must not be
-				// excluded
-				return !this.excludedProperties.contains(property);
-			}
-		}
-	}
+    /**
+     * Gets whether a given property is included in the mapping.
+     * <p>
+     * Whether a property is included is determined by checking several
+     * conditions. Firstly it looks at whether the mapping explicitly
+     * includes/excludes properties, if it does not then the property is
+     * included. However if there are explicit includes/excludes then it has to
+     * inspect these to determine if the property is included. A property must
+     * be in the includes list (which if empty implicitly includes everything)
+     * and not also in the exclude list (which if empty is ignored).
+     * </p>
+     * 
+     * @param property
+     *            Property
+     * @return True if the property is included in the mapping, false otherwise
+     */
+    public boolean includesProperty(String property) {
+        if (this.includedProperties.size() == 0 && this.excludedProperties.size() == 0) {
+            return true;
+        } else {
+            if (this.includedProperties.size() > 0) {
+                // Must be included and not excluded
+                if (!this.includedProperties.contains(property) || this.excludedProperties.contains(property))
+                    return false;
+                return true;
+            } else {
+                // Implicitly all properties are included so must not be
+                // excluded
+                return !this.excludedProperties.contains(property);
+            }
+        }
+    }
 
-	/**
-	 * Gets the URI for a given vertex
-	 * <p>
-	 * See the documentation on {@link #getIdBaseUri()} to see how this is
-	 * calculated.
-	 * </p>
-	 * 
-	 * @param vertex
-	 *            Vertex ID
-	 * @return Vertex URI
-	 */
-	public String getVertexUri(String vertex) {
-		if (this.idBaseUri != null) {
-			return this.idBaseUri + vertex;
-		} else if (this.baseUri != null) {
-			return this.baseUri + vertex;
-		} else {
-			return vertex;
-		}
-	}
+    /**
+     * Gets the URI for a given vertex
+     * <p>
+     * See the documentation on {@link #getIdBaseUri()} to see how this is
+     * calculated.
+     * </p>
+     * 
+     * @param vertex
+     *            Vertex ID
+     * @return Vertex URI
+     */
+    public String getVertexUri(String vertex) {
+        if (this.idBaseUri != null) {
+            return this.idBaseUri + vertex;
+        } else if (this.baseUri != null) {
+            return this.baseUri + vertex;
+        } else {
+            return vertex;
+        }
+    }
 
-	/**
-	 * Gets the URI for a given property
-	 * <p>
-	 * Determining the URI for a property is a multi-stage process which takes
-	 * account of several settings in the mapping. Firstly it checks to see that
-	 * the property in question is actually included in the mapping and if not
-	 * returns {@code null}.
-	 * </p>
-	 * <p>
-	 * If it is included it then looks in the property mapping since any
-	 * property may optionally be mapped to a URI reference. If it is mapped it
-	 * then has to resolve that URI reference by either expanding the prefixed
-	 * name or using the URI as is. When using the URI as-is it will attempt to
-	 * resolve it against the Base URI if the initial URI is not absolute.
-	 * </p>
-	 * <p>
-	 * If the property is not explicitly mapped then the property name will be
-	 * converted into a URI by appending it to the Base URI (assuming there is
-	 * one). In the event that there is no Base URI then the property URI will
-	 * remain relative.
-	 * </p>
-	 * 
-	 * @param property
-	 *            Property
-	 * @return Property URI or null if the property should not be included in
-	 *         the RDF output
-	 */
-	public String getPropertyUri(String property) {
-		// Ignore properties which aren't included
-		if (!this.includesProperty(property))
-			return null;
+    /**
+     * Gets the URI for a given property
+     * <p>
+     * Determining the URI for a property is a multi-stage process which takes
+     * account of several settings in the mapping. Firstly it checks to see that
+     * the property in question is actually included in the mapping and if not
+     * returns {@code null}.
+     * </p>
+     * <p>
+     * If it is included it then looks in the property mapping since any
+     * property may optionally be mapped to a URI reference. If it is mapped it
+     * then has to resolve that URI reference by either expanding the prefixed
+     * name or using the URI as is. When using the URI as-is it will attempt to
+     * resolve it against the Base URI if the initial URI is not absolute.
+     * </p>
+     * <p>
+     * If the property is not explicitly mapped then the property name will be
+     * converted into a URI by appending it to the Base URI (assuming there is
+     * one). In the event that there is no Base URI then the property URI will
+     * remain relative.
+     * </p>
+     * 
+     * @param property
+     *            Property
+     * @return Property URI or null if the property should not be included in
+     *         the RDF output
+     */
+    public String getPropertyUri(String property) {
+        // Ignore properties which aren't included
+        if (!this.includesProperty(property))
+            return null;
 
-		// Is the property explicitly mapped?
-		if (this.propertyMap.containsKey(property)) {
-			String uriref = this.propertyMap.get(property);
-			return this.resolveUriReference(uriref);
-		}
+        // Is the property explicitly mapped?
+        if (this.propertyMap.containsKey(property)) {
+            String uriref = this.propertyMap.get(property);
+            return this.resolveUriReference(uriref);
+        }
 
-		// Otherwise resolve against the Base URI
-		return this.resolveUri(property);
-	}
+        // Otherwise resolve against the Base URI
+        return this.resolveUri(property);
+    }
 
-	/**
-	 * Gets the ID property (if any)
-	 * <p>
-	 * The ID property allows for associating the vertex ID as a literal value
-	 * to the generated vertex URI in addition to embedding it into the URI.
-	 * <p>
-	 * 
-	 * @return ID property
-	 */
-	public String getIdProperty() {
-		return this.idProperty;
-	}
+    /**
+     * Gets the ID property (if any)
+     * <p>
+     * The ID property allows for associating the vertex ID as a literal value
+     * to the generated vertex URI in addition to embedding it into the URI.
+     * <p>
+     * 
+     * @return ID property
+     */
+    public String getIdProperty() {
+        return this.idProperty;
+    }
 
-	/**
-	 * Resolves a URI reference
-	 * 
-	 * @param uriref
-	 *            URI Reference, may be a prefixed name or a relative/absolute
-	 *            URI
-	 * @return URI
-	 */
-	private String resolveUriReference(String uriref) {
-		if (uriref == null)
-			return null;
+    /**
+     * Resolves a URI reference
+     * 
+     * @param uriref
+     *            URI Reference, may be a prefixed name or a relative/absolute
+     *            URI
+     * @return URI
+     */
+    private String resolveUriReference(String uriref) {
+        if (uriref == null)
+            return null;
 
-		// Allow the special a shortcut to refer to rdf:type predicate
-		if (uriref.equals("a"))
-			return RDF.type.getURI();
+        // Allow the special a shortcut to refer to rdf:type predicate
+        if (uriref.equals("a"))
+            return RDF.type.getURI();
 
-		// Then try to resolve as prefixed name
-		if (uriref.contains(":")) {
-			String[] parts = uriref.split(":");
-			String nsPrefix = parts[0];
-			String localName = uriref.substring(nsPrefix.length() + 1);
+        // Then try to resolve as prefixed name
+        if (uriref.contains(":")) {
+            String[] parts = uriref.split(":");
+            String nsPrefix = parts[0];
+            String localName = uriref.substring(nsPrefix.length() + 1);
 
-			if (this.prefixes.contains(nsPrefix)) {
-				return this.prefixes.expand(nsPrefix, localName);
-			}
-		}
+            if (this.prefixes.contains(nsPrefix)) {
+                return this.prefixes.expand(nsPrefix, localName);
+            }
+        }
 
-		// Otherwise try to resolve as URI
-		return this.resolveUri(uriref);
-	}
+        // Otherwise try to resolve as URI
+        return this.resolveUri(uriref);
+    }
 
-	/**
-	 * Resolves a URI
-	 * 
-	 * @param uri
-	 *            URI, may be relative or absolute
-	 * @return Resolved URI
-	 */
-	private String resolveUri(String uri) {
-		return this.resolveUri(uri, this.baseUri);
-	}
+    /**
+     * Resolves a URI
+     * 
+     * @param uri
+     *            URI, may be relative or absolute
+     * @return Resolved URI
+     */
+    private String resolveUri(String uri) {
+        return this.resolveUri(uri, this.baseUri);
+    }
 
-	private String resolveUri(String uri, String baseUri) {
-		IRI iri = IRIFactory.iriImplementation().create(uri);
-		if (iri.isAbsolute()) {
-			// Already an absolute URI
-			return uri;
-		} else if (baseUri != null) {
-			// Attempt to resolve against Base URI
-			return IRIResolver.resolveString(uri, baseUri);
-		} else if (iri.hasViolation(false)) {
-			// Check for illegal URI after trying to relativize because
-			// that may succeed and relativization will error if it fails
-			// anyway
-			throw new IllegalArgumentException("URI " + uri
-					+ " is an illegal IRI");
-		} else {
-			// Leave as a relative URI
-			return uri;
-		}
-	}
+    private String resolveUri(String uri, String baseUri) {
+        IRI iri = IRIFactory.iriImplementation().create(uri);
+        if (iri.isAbsolute()) {
+            // Already an absolute URI
+            return uri;
+        } else if (baseUri != null) {
+            // Attempt to resolve against Base URI
+            return IRIResolver.resolveString("#" + uri, baseUri);
+        } else if (iri.hasViolation(false)) {
+            // Check for illegal URI after trying to relativize because
+            // that may succeed and relativization will error if it fails
+            // anyway
+            throw new IllegalArgumentException("URI " + uri + " is an illegal IRI");
+        } else {
+            // Leave as a relative URI
+            return "#" + uri;
+        }
+    }
 
-	/**
-	 * Applies the mapping to the given input
-	 * 
-	 * @param input
-	 *            Input
-	 * @param output
-	 *            Output
-	 * @throws ExecException
-	 */
-	@SuppressWarnings("unchecked")
-	public void apply(Tuple input, DataBag output) throws ExecException {
-		if (input == null || input.size() != 2)
-			return;
-		SerializedGraphElementStringTypeVids element = (SerializedGraphElementStringTypeVids) input
-				.get(0);
-		GraphElement<StringType> graphElement = element.graphElement();
-		if (graphElement == null)
-			return;
-		if (graphElement.isEdge()) {
-			// Edge Mapping
+    /**
+     * Applies the mapping to the given input
+     * 
+     * @param input
+     *            Input
+     * @param output
+     *            Output
+     * @throws ExecException
+     */
+    @SuppressWarnings("unchecked")
+    public void apply(Tuple input, DataBag output) throws ExecException {
+        if (input == null || input.size() != 2)
+            return;
+        SerializedGraphElementStringTypeVids element = (SerializedGraphElementStringTypeVids) input.get(0);
+        GraphElement<StringType> graphElement = element.graphElement();
+        if (graphElement == null)
+            return;
+        if (graphElement.isEdge()) {
+            // Edge Mapping
 
-			// Get the predicate URI
-			Edge<StringType> edge = (Edge<StringType>) graphElement.get();
-			String predicateUri = this.getPropertyUri(edge.getLabel().get());
-			if (predicateUri == null)
-				return;
-			String sourceId = edge.getSrc().getName().get();
-			String targetId = edge.getDst().getName().get();
-			if (sourceId == null || targetId == null)
-				return;
+            // Get the predicate URI
+            Edge<StringType> edge = (Edge<StringType>) graphElement.get();
+            String predicateUri = this.getPropertyUri(edge.getLabel().get());
+            if (predicateUri == null)
+                return;
+            String sourceId = edge.getSrc().getName().get();
+            String targetId = edge.getDst().getName().get();
+            if (sourceId == null || targetId == null)
+                return;
 
-			// Generate the triple for the edge
-			Triple edgeTriple = new Triple(NodeFactory.createURI(this
-					.getVertexUri(sourceId)),
-					NodeFactory.createURI(predicateUri),
-					NodeFactory.createURI(this.getVertexUri(targetId)));
+            // TODO Support mapping edge properties by creating an intermediate
+            // node
 
-			// Output the triple
-			this.outputTriple(edgeTriple, output);
-		} else if (element.graphElement().isVertex()) {
-			// Vertex Mapping
+            // Generate the triple for the edge
+            Triple edgeTriple = new Triple(NodeFactory.createURI(this.getVertexUri(sourceId)),
+                    NodeFactory.createURI(predicateUri), NodeFactory.createURI(this.getVertexUri(targetId)));
 
-			// Get the vertex URI
-			Vertex<StringType> vertex = (Vertex<StringType>) graphElement.get();
-			String subjectUri = this.getVertexUri(vertex.getId().getName()
-					.get());
-			if (subjectUri == null)
-				return;
-			Node subject = NodeFactory.createURI(subjectUri);
+            // Output the triple
+            this.outputTriple(edgeTriple, output);
 
-			// Add ID Property if this is mapped
-			if (this.idProperty != null) {
-				String idUri = this.getPropertyUri(this.idProperty);
-				if (idUri != null) {
-					this.outputTriple(
-							new Triple(subject, NodeFactory.createURI(idUri),
-									NodeFactory.createLiteral(vertex.getId()
-											.getName().get())), output);
-				}
-			}
+        } else if (element.graphElement().isVertex()) {
+            // Vertex Mapping
 
-			// Add all relevant properties
-			for (Writable property : vertex.getProperties().getPropertyKeys()) {
-				String propertyName = ((StringType) property).get();
-				String propertyUri = this.getPropertyUri(propertyName);
-				if (propertyUri == null)
-					continue;
-				Node object = this.toObject(vertex.getProperties().getProperty(
-						propertyName));
-				if (object == null)
-					continue;
+            // Get the vertex URI
+            Vertex<StringType> vertex = (Vertex<StringType>) graphElement.get();
+            String subjectUri = this.getVertexUri(vertex.getId().getName().get());
+            if (subjectUri == null)
+                return;
+            Node subject = NodeFactory.createURI(subjectUri);
 
-				this.outputTriple(
-						new Triple(subject, NodeFactory.createURI(propertyUri),
-								object), output);
-			}
-		}
-	}
+            // Add ID Property if this is mapped
+            if (this.idProperty != null) {
+                String idUri = this.getPropertyUri(this.idProperty);
+                if (idUri != null) {
+                    this.outputTriple(
+                            new Triple(subject, NodeFactory.createURI(idUri), NodeFactory.createLiteral(vertex.getId()
+                                    .getName().get())), output);
+                }
+            }
 
-	private Node toObject(Writable value) {
-		// Since the RDF Mapping must apply to something generated by the
-		// Property Graph Mapping we know that there should in principal only be
-		// a limited range of types we need to convert
-		if (value instanceof StringType) {
-			return NodeFactory.createLiteral(((StringType) value).get());
-		} else if (value instanceof IntType) {
-			return NodeFactoryExtra.intToNode(((IntType) value).get());
-		} else if (value instanceof LongType) {
-			return NodeFactoryExtra.intToNode(((LongType) value).get());
-		} else if (value instanceof FloatType) {
-			return NodeFactoryExtra.floatToNode(((FloatType) value).get());
-		} else if (value instanceof DoubleType) {
-			return NodeFactoryExtra.doubleToNode(((DoubleType) value).get());
-		} else {
-			// Can't convert other types
-			return null;
-		}
-	}
+            // Add all relevant properties
+            for (Writable property : vertex.getProperties().getPropertyKeys()) {
+                // Create predicate
+                String propertyName = ((StringType) property).get();
+                String propertyUri = this.getPropertyUri(propertyName);
+                if (propertyUri == null)
+                    continue;
 
-	/**
-	 * Outputs a triple
-	 * 
-	 * @param t
-	 *            Triple
-	 * @param output
-	 *            Output
-	 */
-	private void outputTriple(Triple t, DataBag output) {
-		StringBuilder tripleString = new StringBuilder();
-		tripleString.append(FmtUtils.stringForTriple(t, null));
-		tripleString.append(" .");
-		output.add(TupleFactory.getInstance().newTuple(tripleString.toString()));
-	}
+                // Create object
+                Node object = this.uriProperties.contains(propertyName) ? this.toUriObject(vertex.getProperties()
+                        .getProperty(propertyName)) : this.toLiteralObject(vertex.getProperties().getProperty(
+                        propertyName));
+                if (object == null)
+                    continue;
 
-	@Override
-	public Map<String, Object> toMap() throws ExecException {
-		Map<String, Object> mapping = new HashMap<String, Object>();
-		if (this.baseUri != null)
-			mapping.put(BASE_URI, this.baseUri);
-		if (this.idBaseUri != null)
-			mapping.put(ID_BASE_URI, this.idBaseUri);
-		if (this.idProperty != null)
-			mapping.put(ID_PROPERTY, this.idProperty);
-		mapping.put(USE_STD_NAMESPACES, Boolean.toString(this.useStdNamespaces)
-				.toLowerCase());
-		if (this.namespaces.size() > 0)
-			mapping.put(NAMESPACES, this.namespaces);
-		if (this.includedProperties.size() > 0)
-			mapping.put(INCLUDED_PROPERTIES,
-					this.setToTuple(this.includedProperties));
-		if (this.excludedProperties.size() > 0)
-			mapping.put(EXCLUDED_PROPERTIES,
-					this.setToTuple(this.excludedProperties));
-		if (this.propertyMap.size() > 0)
-			mapping.put(PROPERTY_MAP, this.propertyMap);
-		return mapping;
-	}
+                // Output triple expressing the property
+                this.outputTriple(new Triple(subject, NodeFactory.createURI(propertyUri), object), output);
+            }
+        }
+    }
 
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append('[');
-		Map<String, String> properties = new HashMap<>();
-		if (this.baseUri != null)
-			properties.put(BASE_URI, this.baseUri);
-		if (this.idBaseUri != null)
-			properties.put(ID_BASE_URI, this.idBaseUri);
-		if (this.idProperty != null)
-			properties.put(ID_PROPERTY, this.idProperty);
-		properties.put(USE_STD_NAMESPACES,
-				Boolean.toString(this.useStdNamespaces).toLowerCase());
+    private Node toUriObject(Writable value) {
+        String strValue = value.toString();
+        if (strValue == null)
+            return null;
+        return NodeFactory.createURI(this.resolveUri(strValue));
+    }
 
-		Iterator<Entry<String, String>> es = properties.entrySet().iterator();
-		while (es.hasNext()) {
-			Entry<String, String> e = es.next();
-			builder.append('\'');
-			builder.append(e.getKey());
-			builder.append("' # '");
-			builder.append(e.getValue());
-			builder.append('\'');
-			if (es.hasNext())
-				builder.append(',');
-			builder.append(' ');
-		}
+    private Node toLiteralObject(Writable value) {
+        // Since the RDF Mapping must apply to something generated by the
+        // Property Graph Mapping we know that there should in principal only be
+        // a limited range of types we need to convert
+        if (value instanceof StringType) {
+            return NodeFactory.createLiteral(((StringType) value).get());
+        } else if (value instanceof IntType) {
+            return NodeFactoryExtra.intToNode(((IntType) value).get());
+        } else if (value instanceof LongType) {
+            return NodeFactoryExtra.intToNode(((LongType) value).get());
+        } else if (value instanceof FloatType) {
+            return NodeFactoryExtra.floatToNode(((FloatType) value).get());
+        } else if (value instanceof DoubleType) {
+            return NodeFactoryExtra.doubleToNode(((DoubleType) value).get());
+        } else {
+            // Can't convert other types
+            return null;
+        }
+    }
 
-		if (this.includedProperties.size() > 0) {
-			builder.append(", ");
-			builder.append(this.tupleToMapKeyValueString(
-					this.includedProperties, INCLUDED_PROPERTIES));
-		}
-		if (this.excludedProperties.size() > 0) {
-			builder.append(", ");
-			builder.append(this.tupleToMapKeyValueString(
-					this.excludedProperties, EXCLUDED_PROPERTIES));
-		}
-		if (this.namespaces.size() > 0) {
-			builder.append(", ");
-			builder.append(this.mapToMapKeyValueString(this.namespaces,
-					NAMESPACES));
-		}
-		if (this.propertyMap.size() > 0) {
-			builder.append(", ");
-			builder.append(this.mapToMapKeyValueString(this.propertyMap,
-					PROPERTY_MAP));
-		}
+    /**
+     * Outputs a triple
+     * 
+     * @param t
+     *            Triple
+     * @param output
+     *            Output
+     */
+    private void outputTriple(Triple t, DataBag output) {
+        StringBuilder tripleString = new StringBuilder();
+        tripleString.append(FmtUtils.stringForTriple(t, null));
+        tripleString.append(" .");
+        output.add(TupleFactory.getInstance().newTuple(tripleString.toString()));
+    }
 
-		builder.append(']');
-		return builder.toString();
-	}
+    @Override
+    public Map<String, Object> toMap() throws ExecException {
+        Map<String, Object> mapping = new HashMap<String, Object>();
+        if (this.baseUri != null)
+            mapping.put(BASE_URI, this.baseUri);
+        if (this.idBaseUri != null)
+            mapping.put(ID_BASE_URI, this.idBaseUri);
+        if (this.idProperty != null)
+            mapping.put(ID_PROPERTY, this.idProperty);
+        mapping.put(USE_STD_NAMESPACES, Boolean.toString(this.useStdNamespaces).toLowerCase());
+        if (this.namespaces.size() > 0)
+            mapping.put(NAMESPACES, this.namespaces);
+        if (this.includedProperties.size() > 0)
+            mapping.put(INCLUDED_PROPERTIES, this.setToTuple(this.includedProperties));
+        if (this.excludedProperties.size() > 0)
+            mapping.put(EXCLUDED_PROPERTIES, this.setToTuple(this.excludedProperties));
+        if (this.propertyMap.size() > 0)
+            mapping.put(PROPERTY_MAP, this.propertyMap);
+        if (this.uriProperties.size() > 0)
+            mapping.put(URI_PROPERTIES, this.setToTuple(this.uriProperties));
+        return mapping;
+    }
+
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append('[');
+        Map<String, String> properties = new HashMap<>();
+        if (this.baseUri != null)
+            properties.put(BASE_URI, this.baseUri);
+        if (this.idBaseUri != null)
+            properties.put(ID_BASE_URI, this.idBaseUri);
+        if (this.idProperty != null)
+            properties.put(ID_PROPERTY, this.idProperty);
+        properties.put(USE_STD_NAMESPACES, Boolean.toString(this.useStdNamespaces).toLowerCase());
+
+        Iterator<Entry<String, String>> es = properties.entrySet().iterator();
+        while (es.hasNext()) {
+            Entry<String, String> e = es.next();
+            builder.append('\'');
+            builder.append(e.getKey());
+            builder.append("' # '");
+            builder.append(e.getValue());
+            builder.append('\'');
+            if (es.hasNext())
+                builder.append(',');
+            builder.append(' ');
+        }
+
+        if (this.includedProperties.size() > 0) {
+            builder.append(", ");
+            builder.append(this.tupleToMapKeyValueString(this.includedProperties, INCLUDED_PROPERTIES));
+        }
+        if (this.excludedProperties.size() > 0) {
+            builder.append(", ");
+            builder.append(this.tupleToMapKeyValueString(this.excludedProperties, EXCLUDED_PROPERTIES));
+        }
+        if (this.namespaces.size() > 0) {
+            builder.append(", ");
+            builder.append(this.mapToMapKeyValueString(this.namespaces, NAMESPACES));
+        }
+        if (this.propertyMap.size() > 0) {
+            builder.append(", ");
+            builder.append(this.mapToMapKeyValueString(this.propertyMap, PROPERTY_MAP));
+        }
+        if (this.uriProperties.size() > 0) {
+            builder.append(", ");
+            builder.append(this.tupleToMapKeyValueString(this.uriProperties, URI_PROPERTIES));
+        }
+
+        builder.append(']');
+        return builder.toString();
+    }
 }

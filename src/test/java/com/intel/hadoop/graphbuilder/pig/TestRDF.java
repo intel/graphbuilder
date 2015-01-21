@@ -27,11 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import net.fortytwo.linkeddata.RDFUtils;
-
-import org.apache.jena.atlas.lib.ArrayUtils;
 import org.apache.pig.EvalFunc;
-import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
@@ -44,7 +40,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.hp.hpl.jena.sparql.vocabulary.FOAF;
-import com.intel.hadoop.graphbuilder.graphelements.SerializedGraphElement;
 import com.intel.pig.udf.eval.RDF;
 import com.intel.pig.udf.eval.mappings.RdfMapping;
 
@@ -122,13 +117,13 @@ public class TestRDF extends TestCreatePropGraphElements {
         rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
         RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
                 new HashMap<String, String>(), true, Arrays.asList("age"), new ArrayList<String>(),
-                new HashMap<String, String>(), null);
+                new HashMap<String, String>(), null, null);
         rdfInputTuple.set(1, mapping.toMap());
         rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
 
         // Convert to RDF and check
         this.checkRdfResults(rdfInputTuple, 1,
-                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://example.org/age> 33 ." });
+                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://example.org/ontology#age> 33 ." });
     }
 
     @Test
@@ -157,16 +152,18 @@ public class TestRDF extends TestCreatePropGraphElements {
         propertyMappings.put("age", "foaf:age");
         Map<String, String> namespaces = new HashMap<String, String>();
         namespaces.put("foaf", FOAF.NS);
-        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#", namespaces, true,
-                Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null);
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
+                namespaces, true, Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null, null);
         rdfInputTuple.set(1, mapping.toMap());
         rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
 
         // Convert to RDF and check
-        this.checkRdfResults(rdfInputTuple, 1,
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
                 new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
     }
-    
+
     @Test
     public void indirect_rdf_tuple_03() throws IOException {
         // First create a property graph
@@ -194,13 +191,49 @@ public class TestRDF extends TestCreatePropGraphElements {
         propertyMappings.put("name", "foaf:name");
         Map<String, String> namespaces = new HashMap<String, String>();
         namespaces.put("foaf", FOAF.NS);
-        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#", namespaces, true,
-                Arrays.asList("age"), new ArrayList<String>(), propertyMappings, "name");
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
+                namespaces, true, Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null, "name");
         rdfInputTuple.set(1, mapping.toMap());
         rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
 
         // Convert to RDF and check
-        this.checkRdfResults(rdfInputTuple, 1,
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
                 new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
+    }
+
+    @Test
+    public void indirect_rdf_tuple_04() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#", null,
+                true, Arrays.asList("age"), null, null, Arrays.asList("age"), "name");
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
+                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://example.org/ontology#age> <http://example.org/ontology#33> ." });
     }
 }
