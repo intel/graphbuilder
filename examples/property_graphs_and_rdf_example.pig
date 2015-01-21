@@ -1,7 +1,7 @@
 /* Copyright (C) 2013 Intel Corporation.
  * Copyright 2014 YarcData LLC
  *	 All rights reserved.
- *
+ *	
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
@@ -44,28 +44,29 @@ employees_with_valid_ids = FILTER employees BY id!='';
 -- Firstly transform the employee tuples to add the property graph mapping to each tuple
 -- In this example we provide two mappings that produce vertices and a single mapping to produce edges
 -- See the javadoc for the PropertyGraphMapping class to understand the format of the mapping
-employeesWithMappings = FOREACH employees_with_valid_ids GENERATE (*, [
-																		'vertices' # (
-																			[
-																				'id' # 'id',
-																				'properties' # ('name', 'age', 'dept', 'serviceLength'),
-																				'labels' # [ 'type' # 'Person' ]
-																			],
-																			[
-																				'id' # 'manager', 
-																				'labels' # [ 'type' # 'Manager' ]
-																			]
-																		),
-																		'edges' # ( 
-																			[
-																				'source' # 'id',
-																				'target' # 'manager',
-																				'label' # 'hasManager',
-																				'inverseLabel' # 'manages'
-																			]
-																		)
-																	]
-																  );
+employeesWithMappings = FOREACH employees_with_valid_ids 
+						GENERATE (*, [
+										'vertices' # (
+											[
+												'id' # 'id',
+												'properties' # ('name', 'age', 'dept', 'serviceLength'),
+												'labels' # [ 'type' # 'Person' ]
+											],
+											[
+												'id' # 'manager', 
+												'labels' # [ 'type' # 'Manager' ]
+											]
+										),
+										'edges' # ( 
+											[
+												'source' # 'id',
+												'target' # 'manager',
+												'label' # 'hasManager',
+												'inverseLabel' # 'manages'
+											]
+										)
+									]
+								);
 
 -- Then we actually apply the mapping, the use of FLATTEN is required since each tuple produces a bag
 -- of property graph elements and we need them as individual tuples to work on them later
@@ -78,20 +79,22 @@ propertyGraph = FOREACH employeesWithMappings GENERATE FLATTEN(CreatePropertyGra
 -- specific properties in the property graph to specific RDF URIs using namespaces to provide
 -- prefixed name based representation of these
 -- See the javadoc for the RdfMapping class to understand the format of the mapping
-propertyGraphWithMappings = FOREACH propertyGraph GENERATE (*, [ 
-																'idBase' # 'http://example.org/instances/', 
-																'base' # 'http://example.org/ontology#',
-																'namespaces' # [ 
-																					'foaf' # 'http://xmlns.com/foaf/0.1/'
-																			   ],
-																'propertyMap' # [
-																					'type' # 'a', 
-																					'name' # 'foaf:name', 
-																					'age' # 'foaf:age'
-																				],
-																'uriProperties' # ( 'type' ),
-																'idProperty' # 'id' 
-															]);
+propertyGraphWithMappings = FOREACH propertyGraph 
+							GENERATE (*, [ 
+											'idBase' # 'http://example.org/instances/', 
+											'base' # 'http://example.org/ontology#',
+											'namespaces' # [ 
+												'foaf' # 'http://xmlns.com/foaf/0.1/'
+											],
+											'propertyMap' # [
+												'type' # 'a', 
+												'name' # 'foaf:name', 
+												'age' # 'foaf:age'
+											],
+											'uriProperties' # ( 'type' ),
+											'idProperty' # 'id' 
+											]
+									);
 
 -- Then we generate the actual triples, again we need to use FLATTEN since each input tuple produces a
 -- bag of tuples with each containing a single triple as an NTriples string
