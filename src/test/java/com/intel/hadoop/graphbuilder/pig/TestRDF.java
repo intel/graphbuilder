@@ -123,7 +123,7 @@ public class TestRDF extends TestCreatePropGraphElements {
 
         // Convert to RDF and check
         this.checkRdfResults(rdfInputTuple, 1,
-                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://example.org/ontology#age> 33 ." });
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://example.org/ontology#age> 33 ." });
     }
 
     @Test
@@ -161,7 +161,7 @@ public class TestRDF extends TestCreatePropGraphElements {
         this.checkRdfResults(
                 rdfInputTuple,
                 1,
-                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
     }
 
     @Test
@@ -200,7 +200,7 @@ public class TestRDF extends TestCreatePropGraphElements {
         this.checkRdfResults(
                 rdfInputTuple,
                 1,
-                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://xmlns.com/foaf/0.1/age> 33 ." });
     }
 
     @Test
@@ -234,6 +234,191 @@ public class TestRDF extends TestCreatePropGraphElements {
         this.checkRdfResults(
                 rdfInputTuple,
                 1,
-                new String[] { "<http://example.org/instances#Haywood Y. Buzzov> <http://example.org/ontology#age> <http://example.org/ontology#33> ." });
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://example.org/ontology#age> <http://example.org/ontology#33> ." });
+    }
+    
+    @Test
+    public void indirect_rdf_tuple_05() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        Map<String, String> propertyMappings = new HashMap<String, String>();
+        propertyMappings.put("age", "foo/bar/age");
+        propertyMappings.put("name", "foo/bar/name");
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
+                null, true, Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null, "name");
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://example.org/foo/bar/age> 33 ." });
+    }
+    
+    @Test
+    public void indirect_rdf_tuple_06() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        Map<String, String> propertyMappings = new HashMap<String, String>();
+        propertyMappings.put("age", "#age");
+        propertyMappings.put("name", "#name");
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
+                null, true, Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null, "name");
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://example.org/ontology#age> 33 ." });
+    }
+    
+    @Test
+    public void indirect_rdf_tuple_07() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        Map<String, String> propertyMappings = new HashMap<String, String>();
+        propertyMappings.put("age", "#foo/bar/age");
+        propertyMappings.put("name", "#foo/bar/name");
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
+                null, true, Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null, "name");
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://example.org/ontology#foo/bar/age> 33 ." });
+    }
+    
+    @Test
+    public void indirect_rdf_tuple_08() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        Map<String, String> propertyMappings = new HashMap<String, String>();
+        propertyMappings.put("age", "?age");
+        propertyMappings.put("name", "?name");
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology#", "http://example.org/instances#",
+                null, true, Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null, "name");
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://example.org/ontology?age> 33 ." });
+    }
+    
+    @Test
+    public void indirect_rdf_tuple_09() throws IOException {
+        // First create a property graph
+        Schema innerSchema = this.prepareSchema();
+        Schema schema = new Schema(new FieldSchema(null, innerSchema, DataType.TUPLE));
+        createPropGraphElementsUDF.setInputSchema(schema);
+
+        Tuple innerTuple = this.prepareData();
+        Tuple tuple = TupleFactory.getInstance().newTuple(innerTuple);
+
+        List<Tuple> propertyGraphResults = this.checkResults(tuple, 1, new int[] { 4 });
+        Assert.assertEquals(1, propertyGraphResults.size());
+
+        // Then convert to a RDF graph
+        // Need to prepare the appropriate input schema
+        Schema propertyGraphSchema = createPropGraphElementsUDF.outputSchema(schema);
+        Schema rdfInputSchema = this.prepareRdfSchema(propertyGraphSchema);
+        toRdfUdf.setInputSchema(rdfInputSchema);
+
+        // And need to add a RDF mapping to the data
+        Tuple rdfInputTuple = TupleFactory.getInstance().newTuple(2);
+        rdfInputTuple.set(0, propertyGraphResults.get(0).get(0));
+        Map<String, String> propertyMappings = new HashMap<String, String>();
+        propertyMappings.put("age", "age");
+        propertyMappings.put("name", "name");
+        RdfMapping mapping = new RdfMapping("http://example.org/ontology?", "http://example.org/instances#",
+                null, true, Arrays.asList("age"), new ArrayList<String>(), propertyMappings, null, "name");
+        rdfInputTuple.set(1, mapping.toMap());
+        rdfInputTuple = TupleFactory.getInstance().newTuple(rdfInputTuple);
+
+        // Convert to RDF and check
+        this.checkRdfResults(
+                rdfInputTuple,
+                1,
+                new String[] { "<http://example.org/instances#Haywood%20Y.%20Buzzov> <http://example.org/age> 33 ." });
     }
 }

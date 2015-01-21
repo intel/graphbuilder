@@ -20,6 +20,8 @@
 
 package com.intel.pig.udf.eval.mappings;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +34,7 @@ import java.util.Map.Entry;
 import org.apache.hadoop.io.Writable;
 import org.apache.jena.iri.IRI;
 import org.apache.jena.iri.IRIFactory;
+import org.apache.jena.riot.RiotException;
 import org.apache.jena.riot.system.IRIResolver;
 import org.apache.jena.riot.system.PrefixMap;
 import org.apache.jena.riot.system.PrefixMapFactory;
@@ -39,8 +42,6 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-import org.eclipse.jdt.core.dom.ThisExpression;
-
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.NodeFactory;
 import com.hp.hpl.jena.graph.Triple;
@@ -382,11 +383,11 @@ public class RdfMapping extends AbstractMapping {
      */
     public String getVertexUri(String vertex) {
         if (this.idBaseUri != null) {
-            return this.idBaseUri + vertex;
+            return this.resolveUri(vertex, this.idBaseUri);
         } else if (this.baseUri != null) {
-            return this.baseUri + vertex;
+            return this.resolveUri(vertex, this.baseUri);
         } else {
-            return vertex;
+            return this.resolveUri(vertex, null);
         }
     }
 
@@ -429,7 +430,7 @@ public class RdfMapping extends AbstractMapping {
         }
 
         // Otherwise resolve against the Base URI
-        return this.resolveUri(property);
+        return this.resolveUri(property, this.baseUri);
     }
 
     /**
@@ -473,28 +474,39 @@ public class RdfMapping extends AbstractMapping {
         }
 
         // Otherwise try to resolve as URI
-        return this.resolveUri(uriref);
-    }
-
-    /**
-     * Resolves a URI
-     * 
-     * @param uri
-     *            URI, may be relative or absolute
-     * @return Resolved URI
-     */
-    private String resolveUri(String uri) {
-        return this.resolveUri(uri, this.baseUri);
+        return this.resolveUri(uriref, this.baseUri);
     }
 
     private String resolveUri(String uri, String baseUri) {
         IRI iri = IRIFactory.iriImplementation().create(uri);
         if (iri.isAbsolute()) {
-            // Already an absolute URI
+            // Already an absolute URI so can leave as-is
             return uri;
         } else if (baseUri != null) {
             // Attempt to resolve against Base URI
-            return IRIResolver.resolveString("#" + uri, baseUri);
+            if (uri.startsWith("#") || uri.startsWith("?")) {
+                // Already a fragment/query string URI so can resolve as-is
+                return IRIResolver.resolveString(uri, baseUri);
+            } else if (uri.contains("/") && (uri.indexOf('?') == -1 || uri.indexOf('/') < uri.indexOf('?'))
+                    && (uri.indexOf('#') == -1 || uri.indexOf('/') < uri.indexOf('#'))) {
+                // Has path segments (denoted by a /) which aren't after the
+                // fragment or query string start characters so resolve properly
+                return IRIResolver.resolveString(uri, baseUri);
+            } else if (baseUri.endsWith("#")) {
+                // Base URI ends with a # which implies we want URIs to be the
+                // fragment portion of the URI
+                // Therefore resolve as if it were a fragment URI
+                try {
+                    return IRIResolver.resolveString(new URI(null, null, null, uri).toString(), baseUri);
+                } catch (RiotException e) {
+                    throw new IllegalArgumentException("Unable to form a valid IRI using " + uri + " with base "
+                            + baseUri);
+                } catch (URISyntaxException e) {
+                    throw new IllegalArgumentException("Invalid URI " + uri);
+                }
+            }
+            // Otherwise resolve normally
+            return IRIResolver.resolveString(uri, baseUri);
         } else if (iri.hasViolation(false)) {
             // Check for illegal URI after trying to relativize because
             // that may succeed and relativization will error if it fails
@@ -502,7 +514,7 @@ public class RdfMapping extends AbstractMapping {
             throw new IllegalArgumentException("URI " + uri + " is an illegal IRI");
         } else {
             // Leave as a relative URI
-            return "#" + uri;
+            return uri;
         }
     }
 
@@ -591,7 +603,7 @@ public class RdfMapping extends AbstractMapping {
         String strValue = value.toString();
         if (strValue == null)
             return null;
-        return NodeFactory.createURI(this.resolveUri(strValue));
+        return NodeFactory.createURI(this.resolveUri(strValue, this.baseUri));
     }
 
     private Node toLiteralObject(Writable value) {
