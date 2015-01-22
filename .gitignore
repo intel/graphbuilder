@@ -14,3 +14,5 @@ stats
 largegit.sh
 log/*
 *.jar
+pig*.log
+.settings

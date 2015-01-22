@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2013 Intel Corporation.
+ * Copyright 2014 YarcData LLC
  *     All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -246,9 +247,9 @@ public class Vertex<VidNameType extends WritableComparable<VidNameType>>
         } else if (vertexId != null && properties == null) {
             return vertexId.toString();
         } else if (vertexId == null && properties != null) {
-            return "null vertex with properties (???) " + properties.toString();
+            return "null vertex with properties (???) [" + properties.toString() + "]";
         } else {
-            return this.vertexId.toString() +  properties.toString();
+            return this.vertexId.toString() + " [" + properties.toString() + " ]";
         }
     }
 

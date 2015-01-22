@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2013 Intel Corporation.
+ * Copyright 2014 YarcData LLC
  *     All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,12 +33,12 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.MapWritable;
 
 /**
- *  A serialized property map.
- *
- * This class is mutable.  It wraps a  {@code MapWritable} and adds a friendly toString() method.
+ * A serialized property map.
+ * 
+ * This class is mutable. It wraps a {@code MapWritable} and adds a friendly
+ * toString() method.
  */
-public class PropertyMap implements Writable
-{
+public class PropertyMap implements Writable {
     private MapWritable properties = null;
 
     /**
@@ -48,8 +50,11 @@ public class PropertyMap implements Writable
 
     /**
      * Sets a key value pair in the property map.
-     * @param key  Key at which value is to be inserted.
-     * @param value Value to be inserted.
+     * 
+     * @param key
+     *            Key at which value is to be inserted.
+     * @param value
+     *            Value to be inserted.
      */
     public void setProperty(final String key, final Writable value) {
         StringType keyStr = new StringType(key);
@@ -57,10 +62,13 @@ public class PropertyMap implements Writable
     }
 
     /**
-     * Given a key, removes the key-value pair from the map if the key is present. No effect if the key is not present.
-     * @param key The key whose value is to be removed.
-     * @return  The value previously associated with the key (if there was one),
-     * null if no value was associated with the key.
+     * Given a key, removes the key-value pair from the map if the key is
+     * present. No effect if the key is not present.
+     * 
+     * @param key
+     *            The key whose value is to be removed.
+     * @return The value previously associated with the key (if there was one),
+     *         null if no value was associated with the key.
      */
     public Writable removeProperty(final String key) {
         StringType keyStr = new StringType(key);
@@ -69,8 +77,11 @@ public class PropertyMap implements Writable
 
     /**
      * Get the value associated with a key.
-     * @param key  Key whose value is being queried.
-     * @return The value associated with the key, null if no value is associated with the key.
+     * 
+     * @param key
+     *            Key whose value is being queried.
+     * @return The value associated with the key, null if no value is associated
+     *         with the key.
      */
     public Writable getProperty(final String key) {
         StringType keyStr = new StringType(key);
@@ -85,22 +96,35 @@ public class PropertyMap implements Writable
     }
 
     /**
-     * Incorporate the key-value pairs of an incoming {@code PropertyMap} into this {@code PropertyMap}
-     *
-     * If the incoming {@code PropertyMap} conflicts with this {@code PropertyMap},the value from the incoming
-     * map overrides the value previously in this map.
-     *
-     * @param propertyMap incoming property map.
+     * Incorporate the key-value pairs of an incoming {@code PropertyMap} into
+     * this {@code PropertyMap}
+     * 
+     * If the incoming {@code PropertyMap} conflicts with this
+     * {@code PropertyMap},the value from the incoming map overrides the value
+     * previously in this map.
+     * 
+     * @param propertyMap
+     *            incoming property map.
      */
     public void mergeProperties(PropertyMap propertyMap) {
-        for(Writable key : propertyMap.getPropertyKeys()) {
+        for (Writable key : propertyMap.getPropertyKeys()) {
             this.setProperty(key.toString(), propertyMap.getProperty(key.toString()));
         }
     }
 
     /**
-     * Property maps are equal if and only if they map exactly the same keys to exactly the same values.
-     *
+     * Gets the size of the property map
+     * 
+     * @return Size
+     */
+    public int size() {
+        return this.properties.size();
+    }
+
+    /**
+     * Property maps are equal if and only if they map exactly the same keys to
+     * exactly the same values.
+     * 
      * @param object
      * @return
      */
@@ -125,9 +149,12 @@ public class PropertyMap implements Writable
     }
 
     /**
-     * Override of the {@code hashCode} method to be consistent with the overridden {@code equals} method.
-     *
-     * Hashcode values determined only by the hashes of the key/value pairs in the map.
+     * Override of the {@code hashCode} method to be consistent with the
+     * overridden {@code equals} method.
+     * 
+     * Hashcode values determined only by the hashes of the key/value pairs in
+     * the map.
+     * 
      * @return int hashcode
      */
     @Override
@@ -146,47 +173,55 @@ public class PropertyMap implements Writable
 
     /**
      * Read the {@code PropertyMap} from a data stream.
-     *
-     * @param in  The input data stream.
-     *
+     * 
+     * @param in
+     *            The input data stream.
+     * 
      * @throws IOException
      */
     @Override
-    public  void readFields(DataInput in) throws IOException {
+    public void readFields(DataInput in) throws IOException {
         this.properties.readFields(in);
     }
 
     /**
      * Write the {@code PropertyMap} to a data stream.
-     * @param out The output data stream.
+     * 
+     * @param out
+     *            The output data stream.
      * @throws IOException
      */
     @Override
     public void write(DataOutput out) throws IOException {
         this.properties.write(out);
     }
+    
 
     /**
      * Convert the {@code PropertyMap} to a {@code String}
-     *
+     * 
      * @return String representation of the {@code PropertyMap}
      */
-
     @Override
     public String toString() {
+        return toString("=",", ");
+    }
+    
+    public String toString(String keyValueSep, String pairSep) {
+        StringBuilder builder = new StringBuilder();
 
-        StringBuffer s = new StringBuffer();
-
-        if (!properties.isEmpty())
-        {
-
-            for (Map.Entry<Writable, Writable> entry : properties.entrySet())
-            {
-               s.append(entry.getKey() + ":" + entry.getValue() + "\t");
+        if (!properties.isEmpty()) {
+            Iterator<Map.Entry<Writable, Writable>> iter = properties.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry<Writable, Writable> entry = iter.next();
+                builder.append(entry.getKey());
+                builder.append(keyValueSep);
+                builder.append(entry.getValue());
+                if (iter.hasNext())
+                    builder.append(pairSep);
             }
-
         }
 
-        return s.toString();
+        return builder.toString();
     }
 }

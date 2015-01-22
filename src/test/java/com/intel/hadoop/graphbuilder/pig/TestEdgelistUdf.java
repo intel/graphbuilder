@@ -1,4 +1,5 @@
 /* Copyright (C) 2013 Intel Corporation.
+ * Copyright 2014 YarcData LLC
  *     All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +27,6 @@ import java.io.IOException;
 import com.intel.hadoop.graphbuilder.graphelements.VertexID;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.impl.PigContext;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,7 +42,6 @@ public class TestEdgelistUdf {
 
     @Before
     public void setup() throws Exception {
-        System.out.println("*** Starting EdgeList test cases ***");
         toEdgelistUdf0 = (EvalFunc<?>) PigContext
                 .instantiateFuncFromSpec(
                         "com.intel.pig.udf.eval.EdgeList('false')");
@@ -79,21 +78,16 @@ public class TestEdgelistUdf {
         String statement1 = (String) toEdgelistUdf1.exec(t);
 
         // property maps write in different orders e.g.
-        // Expected :Employee001	Employee002	worksWith	age:30	name:Alice
-        // Actual   :Employee001	Employee002	worksWith	name:Alice	age:30
+        // Expected :Employee001    Employee002	worksWith	age=30	name=Alice
+        // Actual   :Employee001	Employee002	worksWith	name=Alice	age=30
         // Hence, we search for the appropriate edge properties
         boolean flag
                 = statement1.contains("Employee001\tEmployee002\tworksWith");
         assertTrue("Edge tuple mismatch", flag);
-        flag = statement1.contains("name:Alice");
+        flag = statement1.contains("name=Alice");
         assertTrue("Edge tuple mismatch", flag);
-        flag = statement1.contains("age:30");
+        flag = statement1.contains("age=30");
         assertTrue("Edge tuple mismatch", flag);
-    }
-
-    @After
-    public void done() {
-        System.out.println("*** Done with the EdgeList tests ***");
     }
 
 }

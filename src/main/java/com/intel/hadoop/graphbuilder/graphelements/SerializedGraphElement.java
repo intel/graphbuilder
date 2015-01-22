@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2013 Intel Corporation.
+ * Copyright 2014 YarcData LLC
  *     All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -202,6 +203,15 @@ public abstract class SerializedGraphElement<VidType extends WritableComparable<
             return 0;
         } else {
             return 1;
+        }
+    }
+    
+    @Override
+    public String toString() {
+        if (this.graphElement() == null) {
+            return "null";
+        } else {
+            return this.graphElement().toString();
         }
     }
 }
