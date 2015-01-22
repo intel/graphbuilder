@@ -57,6 +57,7 @@ import com.intel.hadoop.graphbuilder.types.DoubleType;
 import com.intel.hadoop.graphbuilder.types.FloatType;
 import com.intel.hadoop.graphbuilder.types.IntType;
 import com.intel.hadoop.graphbuilder.types.LongType;
+import com.intel.hadoop.graphbuilder.types.PropertyMap;
 import com.intel.hadoop.graphbuilder.types.StringType;
 
 /**
@@ -170,6 +171,26 @@ public class RdfMapping extends AbstractMapping {
     protected static final String PROPERTY_MAP = "propertyMap";
     protected static final String ID_PROPERTY = "idProperty";
     protected static final String URI_PROPERTIES = "uriProperties";
+    protected static final String EDGE_PROPERTIES_MODE = "edgePropertiesMode";
+
+    /**
+     * Enumeration of modes which control how edge properties are treated
+     * 
+     */
+    public enum EdgePropertiesMode {
+        /**
+         * Ignore edge properties when mapping property graphs to RDF
+         */
+        IGNORE,
+        /**
+         * Use reification to add edge properties
+         */
+        REIFIED,
+        /**
+         * Use n-ary predicate to add edge properties
+         */
+        NARY
+    }
 
     private String baseUri, idBaseUri, idProperty;
     private Set<String> includedProperties = new HashSet<String>();
@@ -179,6 +200,7 @@ public class RdfMapping extends AbstractMapping {
     private Map<String, String> namespaces = new HashMap<String, String>();
     private boolean useStdNamespaces = false;
     private PrefixMap prefixes;
+    private EdgePropertiesMode edgePropertiesMode = EdgePropertiesMode.IGNORE;
 
     /**
      * Creates a new RDF Mapping
@@ -204,7 +226,8 @@ public class RdfMapping extends AbstractMapping {
      */
     public RdfMapping(String baseUri, String idBaseUri, Map<String, String> namespaces, boolean useStdNamespaces,
             Collection<String> includedProperties, Collection<String> excludedProperties,
-            Map<String, String> propertyMap, Collection<String> uriProperties, String idProperty) {
+            Map<String, String> propertyMap, Collection<String> uriProperties, String idProperty,
+            EdgePropertiesMode edgePropertiesMode) {
         this.baseUri = baseUri;
         this.idBaseUri = idBaseUri;
         if (includedProperties != null)
@@ -216,6 +239,7 @@ public class RdfMapping extends AbstractMapping {
         if (uriProperties != null)
             this.uriProperties.addAll(uriProperties);
         this.idProperty = idProperty;
+        this.edgePropertiesMode = edgePropertiesMode;
 
         // Build the prefix map
         this.prefixes = this.useStdNamespaces ? PrefixMapFactory.create(PrefixMapping.Standard) : PrefixMapFactory
@@ -261,6 +285,9 @@ public class RdfMapping extends AbstractMapping {
         if (uriProperties != null)
             this.uriProperties.addAll(uriProperties);
         this.idProperty = this.getStringValue(rdfMapping, ID_PROPERTY, false);
+        String edgePropertiesMode = this.getStringValue(rdfMapping, EDGE_PROPERTIES_MODE, false);
+        if (edgePropertiesMode != null)
+            this.edgePropertiesMode = EdgePropertiesMode.valueOf(edgePropertiesMode.toUpperCase().trim());
 
         this.useStdNamespaces = this.getBooleanValue(rdfMapping, USE_STD_NAMESPACES, false);
         this.prefixes = this.useStdNamespaces ? PrefixMapFactory.create(PrefixMapping.Standard) : PrefixMapFactory
@@ -548,16 +575,47 @@ public class RdfMapping extends AbstractMapping {
             if (sourceId == null || targetId == null)
                 return;
 
-            // TODO Support mapping edge properties by creating an intermediate
-            // node
+            // Create nodes we need
+            Node sourceNode = NodeFactory.createURI(this.getVertexUri(sourceId));
+            Node targetNode = NodeFactory.createURI(this.getVertexUri(targetId));
+            Node predicate = NodeFactory.createURI(predicateUri);
 
-            // Generate the triple for the edge
-            Triple edgeTriple = new Triple(NodeFactory.createURI(this.getVertexUri(sourceId)),
-                    NodeFactory.createURI(predicateUri), NodeFactory.createURI(this.getVertexUri(targetId)));
+            // Decide if and how we need to map edge properties to triples
+            switch (this.edgePropertiesMode) {
+            case REIFIED:
+                // Check whether we need to reify
+                if (edge.getProperties().size() > 0) {
+                    // Need to reify the edge triple in order to add edge
+                    // properties
+                    Node edgeNode = NodeFactory.createAnon();
+                    this.outputTriple(new Triple(edgeNode, RDF.type.asNode(), RDF.Statement.asNode()), output);
+                    this.outputTriple(new Triple(edgeNode, RDF.subject.asNode(), sourceNode), output);
+                    this.outputTriple(new Triple(edgeNode, RDF.predicate.asNode(), predicate), output);
+                    this.outputTriple(new Triple(edgeNode, RDF.object.asNode(), targetNode), output);
 
-            // Output the triple
+                    // Output all relevant properties
+                    this.outputProperties(output, edge.getProperties(), edgeNode);
+                }
+                break;
+            case NARY:
+                // Check whether we need to express in n-ary form
+                Node edgeNode = NodeFactory.createAnon();
+                this.outputTriple(new Triple(sourceNode, predicate, edgeNode), output);
+                this.outputTriple(new Triple(edgeNode, RDF.value.asNode(), targetNode), output);
+                
+                // Output all relevant properties
+                this.outputProperties(output, edge.getProperties(), edgeNode);
+                
+                break;
+            case IGNORE:
+            default:
+                // No additional work needed since edge properties are ignored
+            }
+
+            // Regardless of edge properties mode we always generate a triple
+            // that expresses the edge directly
+            Triple edgeTriple = new Triple(sourceNode, predicate, targetNode);
             this.outputTriple(edgeTriple, output);
-
         } else if (element.graphElement().isVertex()) {
             // Vertex Mapping
 
@@ -579,23 +637,26 @@ public class RdfMapping extends AbstractMapping {
             }
 
             // Add all relevant properties
-            for (Writable property : vertex.getProperties().getPropertyKeys()) {
-                // Create predicate
-                String propertyName = ((StringType) property).get();
-                String propertyUri = this.getPropertyUri(propertyName);
-                if (propertyUri == null)
-                    continue;
+            outputProperties(output, vertex.getProperties(), subject);
+        }
+    }
 
-                // Create object
-                Node object = this.uriProperties.contains(propertyName) ? this.toUriObject(vertex.getProperties()
-                        .getProperty(propertyName)) : this.toLiteralObject(vertex.getProperties().getProperty(
-                        propertyName));
-                if (object == null)
-                    continue;
+    protected void outputProperties(DataBag output, PropertyMap properties, Node subject) {
+        for (Writable property : properties.getPropertyKeys()) {
+            // Create predicate
+            String propertyName = ((StringType) property).get();
+            String propertyUri = this.getPropertyUri(propertyName);
+            if (propertyUri == null)
+                continue;
 
-                // Output triple expressing the property
-                this.outputTriple(new Triple(subject, NodeFactory.createURI(propertyUri), object), output);
-            }
+            // Create object
+            Node object = this.uriProperties.contains(propertyName) ? this.toUriObject(properties
+                    .getProperty(propertyName)) : this.toLiteralObject(properties.getProperty(propertyName));
+            if (object == null)
+                continue;
+
+            // Output triple expressing the property
+            this.outputTriple(new Triple(subject, NodeFactory.createURI(propertyUri), object), output);
         }
     }
 
@@ -661,6 +722,8 @@ public class RdfMapping extends AbstractMapping {
             mapping.put(PROPERTY_MAP, this.propertyMap);
         if (this.uriProperties.size() > 0)
             mapping.put(URI_PROPERTIES, this.setToTuple(this.uriProperties));
+        if (this.edgePropertiesMode != EdgePropertiesMode.IGNORE)
+            mapping.put(EDGE_PROPERTIES_MODE, this.edgePropertiesMode.toString());
         return mapping;
     }
 
@@ -674,6 +737,8 @@ public class RdfMapping extends AbstractMapping {
             properties.put(ID_BASE_URI, this.idBaseUri);
         if (this.idProperty != null)
             properties.put(ID_PROPERTY, this.idProperty);
+        if (this.edgePropertiesMode != null)
+            properties.put(EDGE_PROPERTIES_MODE, this.edgePropertiesMode.toString().toLowerCase());
         properties.put(USE_STD_NAMESPACES, Boolean.toString(this.useStdNamespaces).toLowerCase());
 
         Iterator<Entry<String, String>> es = properties.entrySet().iterator();
